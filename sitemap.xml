@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+          http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- ════════════════════════════════════════════════════════
+       HOMEPAGE
+       ════════════════════════════════════════════════════════ -->
+  <url>
+    <loc>https://zirov.xyz/</loc>
+    <lastmod>2026-03-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://zirov.xyz/img/profile.png</image:loc>
+      <image:title>ZureFX | Security Research</image:title>
+    </image:image>
+  </url>
+
+  <!-- ════════════════════════════════════════════════════════
+       PAGES
+       ════════════════════════════════════════════════════════ -->
+
+  <url>
+    <loc>https://zirov.xyz/page/profile.html</loc>
+    <lastmod>2026-03-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://zirov.xyz/page/archives.html</loc>
+    <lastmod>2026-03-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://zirov.xyz/page/notes.html</loc>
+    <lastmod>2026-03-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://zirov.xyz/page/tags.html</loc>
+    <lastmod>2026-03-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Projects index  -->
+  <url>
+    <loc>https://zirov.xyz/page/projects.html</loc>
+    <lastmod>2026-03-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ════════════════════════════════════════════════════════
+       NOTES
+       ════════════════════════════════════════════════════════ -->
+
+</urlset>

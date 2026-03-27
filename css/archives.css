@@ -1,0 +1,201 @@
+/* ============================================================
+   ZureFX — archives.css
+   Estilos exclusivos de archives.html
+   Depende de styles.css (variables y base)
+   ============================================================ */
+
+/* ── Layout ── */
+.archives-page {
+  min-height: calc(100vh - 54px);
+  display: flex;
+  flex-direction: column;
+}
+
+.archives-main {
+  flex: 1;
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3.5rem 2rem 6rem;
+}
+
+/* ── Page Header ── */
+.archives-header {
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.archives-header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: .15;
+  mask-image: radial-gradient(ellipse 80% 100% at 50% 0%, black 0%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 100% at 50% 0%, black 0%, transparent 100%);
+  pointer-events: none;
+}
+.archives-header::after {
+  content: '';
+  position: absolute;
+  width: 340px; height: 340px;
+  background: radial-gradient(circle, rgba(204,43,43,0.08) 0%, transparent 70%);
+  top: -80px; right: -60px;
+  pointer-events: none;
+}
+
+.archives-header-top {
+  position: relative; z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.archives-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.58rem; font-weight: 600;
+  color: var(--red);
+  letter-spacing: .2em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: .5rem;
+}
+.archives-eyebrow::before {
+  content: '';
+  width: 18px; height: 1px;
+  background: var(--red); flex-shrink: 0;
+}
+
+.archives-title {
+  font-family: var(--display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text-1);
+  margin-bottom: .5rem;
+}
+.archives-title em { font-style: normal; color: var(--red); }
+
+.archives-subtitle {
+  font-family: var(--mono);
+  font-size: 0.62rem; color: var(--text-3);
+  letter-spacing: .03em; line-height: 1.6;
+}
+
+/* Stats — igual que tags/projects */
+.archives-stats {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+.archives-stat {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px;
+  background: var(--bg-card2); border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 0.58rem; color: var(--text-3);
+}
+.archives-stat + .archives-stat { border-left: none; }
+.archives-stat svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+/* ── Month Group ── */
+.archive-group {
+  margin-bottom: 2.4rem;
+  animation: arc-fadein .3s ease both;
+}
+.archive-group:nth-child(1) { animation-delay: .04s; }
+.archive-group:nth-child(2) { animation-delay: .08s; }
+.archive-group:nth-child(3) { animation-delay: .12s; }
+.archive-group:nth-child(4) { animation-delay: .16s; }
+.archive-group:nth-child(5) { animation-delay: .20s; }
+.archive-group:nth-child(6) { animation-delay: .24s; }
+.archive-group:nth-child(7) { animation-delay: .28s; }
+.archive-group:nth-child(8) { animation-delay: .32s; }
+
+@keyframes arc-fadein {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Month heading — mismo estilo que tag-section-heading */
+.archive-month-heading {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem; padding-bottom: .65rem;
+  border-bottom: 1px solid var(--border);
+}
+.archive-month-left  { display: flex; align-items: center; gap: 10px; }
+.archive-month-dot   {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--red); flex-shrink: 0;
+}
+.archive-month-label {
+  font-family: var(--mono); font-size: 0.57rem; font-weight: 700;
+  letter-spacing: .15em; text-transform: uppercase; color: var(--text-3);
+}
+.archive-month-count {
+  font-family: var(--mono); font-size: 0.58rem;
+  color: var(--text-3); letter-spacing: .06em;
+}
+
+/* ── Post list — hereda pl-item de styles.css igual que tags ── */
+.archive-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.archive-post-list .pl-item { animation: arc-fadein .35s ease both; }
+.archive-post-list .pl-item:nth-child(1) { animation-delay: .04s; }
+.archive-post-list .pl-item:nth-child(2) { animation-delay: .08s; }
+.archive-post-list .pl-item:nth-child(3) { animation-delay: .12s; }
+.archive-post-list .pl-item:nth-child(4) { animation-delay: .16s; }
+.archive-post-list .pl-item:nth-child(5) { animation-delay: .20s; }
+.archive-post-list .pl-item:nth-child(6) { animation-delay: .24s; }
+
+/* ── Empty / error ── */
+.archives-empty {
+  padding: 5rem 0; text-align: center;
+  color: var(--text-3); font-family: var(--mono);
+  font-size: 0.6rem; letter-spacing: .04em;
+}
+.archives-empty svg {
+  width: 36px; height: 36px;
+  margin: 0 auto .9rem; opacity: .15; display: block;
+}
+.archives-empty h3 {
+  font-family: var(--display); font-size: 0.95rem;
+  font-weight: 700; color: var(--text-2); margin-bottom: .4rem;
+}
+.archives-empty p { font-size: 0.82rem; color: var(--text-3); line-height: 1.6; }
+
+/* ── Skeleton ── */
+@keyframes arc-pulse { 0%,100%{opacity:.4} 50%{opacity:.15} }
+
+.arc-skeleton-group   { margin-bottom: 2.4rem; }
+.arc-skeleton-heading {
+  height: 14px; width: 120px; background: var(--bg-card2);
+  margin-bottom: .9rem;
+  animation: arc-pulse 1.5s ease infinite;
+}
+.arc-skeleton-row {
+  height: 130px; background: var(--bg-card2);
+  border: 1px solid var(--border); margin-bottom: 10px;
+  animation: arc-pulse 1.5s ease infinite;
+}
+.arc-skeleton-row:nth-child(2) { animation-delay: .15s; opacity: .8; }
+.arc-skeleton-row:nth-child(3) { animation-delay: .30s; opacity: .6; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .archives-main  { padding: 2.2rem 1.2rem 4rem; }
+  .archives-title { font-size: clamp(1.7rem, 8vw, 2.2rem); letter-spacing: -1px; }
+  .archives-stats { align-self: flex-start; }
+}

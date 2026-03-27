@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /js/
+Disallow: /css/
+
+Sitemap: https://zirov.xyz/sitemap.xml
