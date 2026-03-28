@@ -63,4 +63,16 @@
        NOTES
        ════════════════════════════════════════════════════════ -->
 
+
+  <url>
+    <loc>https://zirov.github.io/research/zfx-recon-tool.html</loc>
+    <lastmod>2026-03-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://zirov.xyz/img/zfx-recon-tool.png</image:loc>
+      <image:title>ZFX Recon Tool</image:title>
+    </image:image>
+  </url>
+
 </urlset>
