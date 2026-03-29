@@ -334,6 +334,9 @@ function renderGrid(posts) {
     var card  = document.createElement('article');
     card.className = 'pg-card';
 
+    /* ── Inject --section-color so CSS hover rules pick it up ── */
+    card.style.setProperty('--section-color', color);
+
     card.innerHTML =
       '<div class="pg-visual" style="--tint:' + tint + '">' +
         '<div class="pg-visual-label"></div>' +
@@ -371,6 +374,9 @@ function renderList(posts) {
     var label = capitalize(p.section);
     var item  = document.createElement('div');
     item.className = 'pl-item';
+
+    /* ── Inject --section-color so CSS hover rules pick it up ── */
+    item.style.setProperty('--section-color', color);
 
     item.innerHTML =
       '<div class="pl-visual" style="--tint:' + tint + '">' +
@@ -420,6 +426,10 @@ function renderPicks(posts) {
 
     var li = document.createElement('li');
     li.className = 'pick';
+
+    /* ── Inject --section-color so the accent bar and pick-num use it ── */
+    li.style.setProperty('--section-color', color);
+
     li.innerHTML =
       '<span class="pick-num">0' + (i + 1) + '</span>' +
       '<div class="pick-thumb ' + PICK_TINTS[i] + '"></div>' +
