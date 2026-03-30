@@ -6,7 +6,7 @@
     "description": "A deep-dive into CPU scheduling algorithms — FCFS, SJF, SRTF, and Round Robin — covering core theory, Gantt diagram walkthroughs, real OS implementations, and the practical challenges every systems programmer should understand.",
     "permalink": "/research/cpu-scheduling.html",
     "btn_label": "Read More",
-    "date": "2025-07-01",
+    "date": "2025-03-30",
     "tags": [
       "operatingsystems",
       "cpuscheduling",
