@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ══════════════ PRIMARY META ══════════════ -->
+  <title>CPU Scheduling Algorithms: How Operating Systems Manage Processes | Zirov</title>
+  <meta name="description" content="A deep-dive into CPU scheduling algorithms — FCFS, SJF, SRTF, and Round Robin — covering core theory, Gantt diagram walkthroughs, real OS implementations, and the practical challenges every systems programmer should understand." />
+  <meta name="author"      content="Zirov" />
+  <meta name="robots"      content="index, follow" />
+  <meta name="keywords"    content="cpu scheduling, operating systems, process scheduling, round robin, FCFS, SJF, SRTF, CFS, linux scheduler, computer science" />
+  <link rel="canonical"    href="https://zirov.xyz/research/cpu-scheduling.html" />
+
+  <!-- ══════════════ OPEN GRAPH ══════════════ -->
+  <meta property="og:type"                content="article" />
+  <meta property="og:title"               content="CPU Scheduling Algorithms: How Operating Systems Manage Processes | Zirov" />
+  <meta property="og:description"         content="A deep-dive into CPU scheduling algorithms — FCFS, SJF, SRTF, and Round Robin — covering core theory, Gantt diagram walkthroughs, real OS implementations, and the practical challenges every systems programmer should understand." />
+  <meta property="og:url"                 content="https://zirov.xyz/research/cpu-scheduling.html" />
+  <meta property="og:site_name"           content="Zirov" />
+  <meta property="og:image"              content="https://zirov.xyz/img/cpu-scheduling.png" />
+  <meta property="og:image:width"        content="1200" />
+  <meta property="og:image:height"       content="630" />
+  <meta property="og:image:alt"          content="CPU Scheduling Algorithms: How Operating Systems Manage Processes — Zirov" />
+  <meta property="og:locale"             content="en_US" />
+  <meta property="article:author"         content="Zirov" />
+  <meta property="article:published_time" content="2025-07-01" />
+  <meta property="article:tag" content="OperatingSystems">
+  <meta property="article:tag" content="CPUScheduling">
+  <meta property="article:tag" content="ProcessScheduling">
+  <meta property="article:tag" content="ProcessManagement">
+  <meta property="article:tag" content="SchedulingAlgorithms">
+  <meta property="article:tag" content="RoundRobin">
+  <meta property="article:tag" content="FCFS">
+  <meta property="article:tag" content="SJF">
+  <meta property="article:tag" content="SRTF">
+  <meta property="article:tag" content="LinuxScheduler">
+  <meta property="article:tag" content="WindowsScheduler">
+  <meta property="article:tag" content="SystemsProgramming">
+  <meta property="article:tag" content="ComputerScience">
+  <meta property="article:tag" content="OSInternals">
+  <meta property="article:tag" content="KernelConcepts">
+
+  <!-- ══════════════ TWITTER CARD ══════════════ -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="CPU Scheduling Algorithms: How Operating Systems Manage Processes | Zirov" />
+  <meta name="twitter:description" content="A deep-dive into CPU scheduling algorithms — FCFS, SJF, SRTF, and Round Robin — covering core theory, Gantt diagram walkthroughs, real OS implementations, and the practical challenges every systems programmer should understand." />
+  <meta name="twitter:image"       content="https://zirov.xyz/img/cpu-scheduling.png" />
+  <meta name="twitter:image:alt"   content="CPU Scheduling Algorithms: How Operating Systems Manage Processes — Zirov" />
+
+  <!-- ══════════════ SCHEMA.ORG ══════════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "CPU Scheduling Algorithms: How Operating Systems Manage Processes",
+    "description": "A deep-dive into CPU scheduling algorithms — FCFS, SJF, SRTF, and Round Robin — covering core theory, Gantt diagram walkthroughs, real OS implementations, and the practical challenges every systems programmer should understand.",
+    "image": "https://zirov.xyz/img/cpu-scheduling.png",
+    "author": {
+      "@type": "Person",
+      "name": "Zirov",
+      "url": "https://zirov.xyz/page/profile.html"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Zirov",
+      "url": "https://zirov.xyz/"
+    },
+    "datePublished": "2025-07-01",
+    "dateModified":  "2025-07-01",
+    "url": "https://zirov.xyz/research/cpu-scheduling.html",
+    "keywords": ["OperatingSystems", "CPUScheduling", "ProcessScheduling", "ProcessManagement", "SchedulingAlgorithms", "RoundRobin", "FCFS", "SJF", "SRTF", "LinuxScheduler", "WindowsScheduler", "SystemsProgramming", "ComputerScience", "OSInternals", "KernelConcepts"],
+    "articleSection": "Research",
+    "inLanguage": "en"
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/search.css">
+  <link rel="stylesheet" href="../css/post.css">
+</head>
+<body>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="side-menu" id="sideMenu">
+    <div class="menu-profile">
+      <img src="../img/profile.png" class="menu-avatar" alt="Zirov" onerror="this.style.display='none'">
+      <h3 class="menu-name">Ziro<em>v</em></h3>
+      <p class="menu-bio">Security Researcher · CTF Player · Blogger</p>
+    </div>
+    <div class="menu-nav-wrapper">
+      <nav class="menu-nav">
+        <a href="/" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg><span>Home</span></a>
+        <a href="../page/profile.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg><span>Zirov</span></a>
+        <a href="../page/archives.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Archives</span></a>
+        <a href="../page/notes.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg><span>Notes</span></a>
+        <a href="../page/tags.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg><span>Tags</span></a>
+        <a href="../page/projects.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg><span>Projects</span></a>
+      </nav>
+      <nav class="menu-nav menu-nav-secondary">
+        <a href="https://youtube.com/@zirovsec" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg><span>YouTube</span></a>
+        <a href="https://twitch.tv/zirovsec" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg><span>Twitch</span></a>
+        <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span>Discord</span></a>
+      </nav>
+    </div>
+    <div class="menu-social-strip">
+      <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="menu-social-link" aria-label="GitHub"><svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg></a>
+      <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="menu-social-link" aria-label="LinkedIn"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg></a>
+      <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="menu-social-link" aria-label="HackTheBox"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg></a>
+      <a href="mailto:fabian.huamani@ucsm.edu.pe" class="menu-social-link" aria-label="Email"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></a>
+    </div>
+  </aside>
+  <header class="topbar">
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a class="logo-wrap" href="/"><svg class="logo-icon" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg"><path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/><path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/></svg><span class="logo-text">Ziro<em>v</em></span></a>
+    <div class="topbar-right">
+      <button class="icon-btn search-btn" aria-label="Search" id="search-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="i-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+      </button>
+      <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener" class="btn-join">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        Join Discord
+      </a>
+      <a href="../page/profile.html" class="avatar"><img src="../img/profile.png" alt="Zirov" onerror="this.style.display='none'"></a>
+    </div>
+  </header>
+  <div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+  <main class="layout">
+    <article class="col-featured post-article">
+      <header class="post-header">
+        <div class="post-breadcrumb">
+          <a href="/">Home</a><span class="sep">›</span>
+          <a href="/page/research.html">Research</a><span class="sep">›</span>
+          <span>CPU Scheduling Algorithms: How Operating Systems Manage Processes</span>
+        </div>
+        <h1 class="post-title">CPU Scheduling Algorithms: How Operating Systems Manage Processes</h1>
+        <div class="post-meta">
+          <span class="post-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jul 01, 2025</span>
+          <span class="post-dot">·</span>
+          <span class="post-words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>4,864 words</span></span>
+          <span class="post-dot">·</span>
+          <span class="post-readtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>25 min</span></span>
+        </div>
+        <div class="post-tags"><a href="/page/tags.html#operatingsystems" class="tag">OperatingSystems</a>
+                  <a href="/page/tags.html#cpuscheduling" class="tag">CPUScheduling</a>
+                  <a href="/page/tags.html#processscheduling" class="tag">ProcessScheduling</a>
+                  <a href="/page/tags.html#processmanagement" class="tag">ProcessManagement</a>
+                  <a href="/page/tags.html#schedulingalgorithms" class="tag">SchedulingAlgorithms</a>
+                  <a href="/page/tags.html#roundrobin" class="tag">RoundRobin</a>
+                  <a href="/page/tags.html#fcfs" class="tag">FCFS</a>
+                  <a href="/page/tags.html#sjf" class="tag">SJF</a>
+                  <a href="/page/tags.html#srtf" class="tag">SRTF</a>
+                  <a href="/page/tags.html#linuxscheduler" class="tag">LinuxScheduler</a>
+                  <a href="/page/tags.html#windowsscheduler" class="tag">WindowsScheduler</a>
+                  <a href="/page/tags.html#systemsprogramming" class="tag">SystemsProgramming</a>
+                  <a href="/page/tags.html#computerscience" class="tag">ComputerScience</a>
+                  <a href="/page/tags.html#osinternals" class="tag">OSInternals</a>
+                  <a href="/page/tags.html#kernelconcepts" class="tag">KernelConcepts</a></div>
+      </header>
+      <img class="post-cover" src="https://zirov.xyz/img/cpu-scheduling.png" alt="CPU Scheduling Algorithms: How Operating Systems Manage Processes cover" onerror="this.style.display='none'"/>
+      <div class="post-content">
+<p><strong>Type:</strong> <code>Systems Research</code> <code>CS Education</code> <code>Operating Systems</code><br />
+<strong>Author:</strong> Zirov<br />
+<strong>Date:</strong> 2025-03-30</p>
+<blockquote>
+<p><em>When multiple processes compete for a single CPU, the scheduler decides who runs, when, and for how long — a deceptively simple problem with profound consequences for performance, fairness, and responsiveness.</em></p>
+</blockquote>
+<h2 id="abstract">Abstract</h2>
+<p>Modern operating systems routinely manage dozens to thousands of concurrent processes on hardware that may expose only a handful of CPU cores. CPU scheduling is the policy layer that resolves this contention — it decides which ready process gets the processor at any given moment, for how long, and under what conditions it can be preempted. This article covers the foundational scheduling algorithms (FCFS, SJF, SRTF, and Round Robin), derives their performance characteristics analytically using a shared example dataset, and traces how their theoretical models evolved into the schedulers shipping inside Linux and Windows today. It also surfaces the real-world pathologies — starvation, convoy effect, excessive context-switch overhead — that make production scheduling considerably harder than textbook examples suggest. By the end, the reader should be able to reason critically about scheduler trade-offs, implement a simulator in C, and understand why no single algorithm is universally optimal.</p>
+<h2 id="introduction">Introduction</h2>
+<h3 id="the-real-world-problem">The Real-World Problem</h3>
+<p>A web server can receive many requests at the same time. Behind the scenes, several processes wait in the ready queue for CPU time to run application logic and generate a response. But since the hardware has a limited number of CPU cores, something has to decide which process runs first.</p>
+<p>This is the baseline state of any modern multitasking operating system. Even on a personal laptop, background services, the user interface, browser tabs, antivirus scans, and user applications are all competing for CPU time. The component responsible for managing this competition is the <strong>CPU scheduler</strong>.</p>
+<h3 id="why-it-matters-for-performance-and-responsiveness">Why It Matters for Performance and Responsiveness</h3>
+<p>The scheduling policy chosen by an OS has a direct and measurable impact on the user experience. A poorly chosen scheduler can cause an interactive application to freeze for several seconds while a background job monopolizes the CPU. A well-designed one ensures that every process receives timely, fair access to the processor — keeping the system responsive under load. Understanding scheduling is therefore essential not just for OS designers, but for any systems programmer who needs to reason about latency, throughput, and resource contention.</p>
+<h2 id="cpu-scheduling">CPU Scheduling</h2>
+<p>CPU scheduling is the mechanism an operating system uses to determine which process or task gets access to the CPU at a given moment. This is necessary because the CPU can execute only one task at a time, while multiple tasks are usually waiting to run.</p>
+<h3 id="why-it-is-necessary">Why It Is Necessary</h3>
+<p>Scheduling is necessary because multiple processes may be ready to run simultaneously while the CPU can execute only one at a time. The operating system must decide which process gets the CPU next, ensuring that the processor does not remain idle and that system resources are used efficiently. Without a scheduling policy, the CPU would either sit idle or execute processes in an arbitrary order, leading to unpredictable and often poor performance.</p>
+<h3 id="goals">Goals</h3>
+<p>As a general rule, the objective of scheduling is to:</p>
+<ul>
+<li><strong>Maximize</strong> CPU utilization and processing throughput</li>
+<li><strong>Minimize</strong> execution time, waiting time, and response time</li>
+<li><strong>Ensure fairness</strong> — no process should be indefinitely denied access to the CPU</li>
+<li><strong>Meet deadlines</strong> in real-time systems where timing guarantees are required</li>
+</ul>
+<h2 id="types-of-scheduling">Types of Scheduling</h2>
+<p>Scheduling can be classified into two main types.</p>
+<img alt="" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/research/cpu-scheduling/img01.png" />
+<h3 id="preemptive">Preemptive</h3>
+<p>In a <strong>preemptive</strong> scheduler, the OS can forcibly reclaim the CPU from a running process — typically on a timer interrupt, on the arrival of a higher-priority process, or when a better candidate appears in the ready queue.</p>
+<p>If a process with high priority arrives in the ready queue, it does not have to wait for the current process to complete its burst time. Instead, the current process is interrupted in the middle of execution and placed back in the ready queue until the higher-priority process finishes using the CPU. This makes preemptive scheduling flexible, but it increases the overhead associated with switching a process from the running state to the ready state and vice versa.</p>
+<p>Algorithms that operate under preemptive scheduling include Round Robin and Shortest Remaining Time First (SRTF). Shortest Job First (SJF) and Priority Scheduling may or may not be preemptive depending on the implementation.</p>
+<p>To better understand how <strong>preemptive scheduling</strong> works, consider the following example with four processes:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Arrival Time</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>0</td>
+<td>7 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>2</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>3</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>5</td>
+<td>3 ms</td>
+</tr>
+</tbody>
+</table>
+<p>At <strong>time 0</strong>, only <strong>P1</strong> has arrived in the ready queue, so the CPU begins executing <strong>P1</strong>.</p>
+<p>At <strong>time 2</strong>, process <strong>P2</strong> arrives. Because the system uses a <strong>preemptive scheduling algorithm</strong>, the scheduler compares the <strong>remaining execution time of P1</strong> with the <strong>burst time of P2</strong>. Since <strong>P2 requires less time</strong>, the CPU <strong>preempts P1</strong> and starts executing <strong>P2</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Remaining Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>5 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>4 ms</td>
+</tr>
+</tbody>
+</table>
+<p>At <strong>time 3</strong>, process <strong>P3</strong> arrives with an even <strong>shorter burst time</strong>. The scheduler compares the remaining execution times and selects the shortest one. As a result, <strong>P2 is interrupted</strong>, and the CPU is assigned to <strong>P3</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Remaining Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>5 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>2 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Process <strong>P3</strong> continues executing until it finishes at <strong>time 5</strong>.</p>
+<p>At <strong>time 5</strong>, <strong>P4</strong> arrives. The scheduler now compares the remaining processes:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Remaining Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>5 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>3 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Since <strong>P2</strong> and <strong>P4</strong> have the same remaining time, the scheduler selects <strong>P2</strong> because it arrived earlier. Therefore, <strong>P2 resumes execution</strong> and continues until it finishes at <strong>time 8</strong>.</p>
+<p>After <strong>P2</strong> completes, the scheduler compares the remaining processes:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Remaining Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>5 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>3 ms</td>
+</tr>
+</tbody>
+</table>
+<p>The CPU is then allocated to <strong>P4</strong>, which executes from <strong>time 8 to time 11</strong>.</p>
+<p>Finally, <strong>P1</strong> is the only process left in the ready queue, so it resumes execution and finishes at <strong>time 16</strong>.</p>
+<p>The resulting <strong>Gantt Chart</strong> is:</p>
+<img alt="" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/research/cpu-scheduling/img02.png" />
+<h3 id="non-preemptive">Non-Preemptive</h3>
+<p>In a <strong>non-preemptive</strong> scheduler, a process runs until it finishes or moves to a waiting state. The OS cannot forcibly take the CPU away from a running process.</p>
+<p>Unlike preemptive scheduling, non-preemptive scheduling does not interrupt a process in the middle of execution. Instead, it waits for the process to complete its CPU burst time before allocating the CPU to another process. This eliminates the overhead of context switching mid-burst, but it also means that a high-priority process arriving while a long process is running must wait — making the system less responsive.</p>
+<p>To understand how <strong>non-preemptive scheduling</strong> works, consider the same set of processes used in the previous example:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Arrival Time</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>0</td>
+<td>7 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>2</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>3</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>5</td>
+<td>3 ms</td>
+</tr>
+</tbody>
+</table>
+<p>At <strong>time 0</strong>, only <strong>P1</strong> has arrived in the ready queue, so the CPU starts executing <strong>P1</strong>.</p>
+<p>In <strong>non-preemptive scheduling</strong>, once a process starts executing, <strong>it cannot be interrupted until it finishes its CPU burst</strong>. Therefore, even if other processes arrive with shorter burst times, they must wait until the current process completes.</p>
+<p>Between <strong>time 2 and time 5</strong>, processes <strong>P2, P3, and P4</strong> arrive in the ready queue. However, <strong>P1 continues executing</strong> because the scheduler cannot preempt it.</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Arrival Time</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P2</td>
+<td>2</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>3</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>5</td>
+<td>3 ms</td>
+</tr>
+</tbody>
+</table>
+<p>At <strong>time 7</strong>, <strong>P1 finishes execution</strong>. The scheduler now selects the next process from the ready queue. Assuming a <strong>First Come First Serve (FCFS)</strong> order among the waiting processes, <strong>P2</strong> is selected because it arrived first.</p>
+<p><strong>P2</strong> executes from <strong>time 7 to time 11</strong>.</p>
+<p>After <strong>P2</strong> completes, the scheduler selects the next process in the ready queue, which is <strong>P3</strong>.<br />
+<strong>P3</strong> executes from <strong>time 11 to time 13</strong>.</p>
+<p>Finally, <strong>P4</strong> is the last remaining process in the queue and executes from <strong>time 13 to time 16</strong>.</p>
+<p>The resulting <strong>Gantt Chart</strong> is:</p>
+<img alt="" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/research/cpu-scheduling/img03.png" />
+<h2 id="scheduling-algorithms">Scheduling Algorithms</h2>
+<h3 id="first-come-first-served-fcfs">First Come First Served (FCFS)</h3>
+<p>FCFS is the simplest and most straightforward scheduling algorithm. The principle is exactly as it sounds: processes are executed in the order they arrive, without any prioritization. This method is analogous to standing in a queue at a supermarket checkout — the first person in line is the first to be served.</p>
+<h4 id="advantages">Advantages</h4>
+<ul>
+<li>Trivial to implement (a single FIFO queue)</li>
+<li>No starvation — every process eventually reaches the front</li>
+<li>No parameters to tune</li>
+</ul>
+<h4 id="disadvantages">Disadvantages</h4>
+<ul>
+<li><strong>Convoy effect:</strong> One long CPU-bound process forces all shorter processes behind it to wait, dramatically inflating average waiting time</li>
+<li>Poor average waiting time for mixed workloads</li>
+<li>Zero responsiveness guarantee for interactive processes</li>
+</ul>
+<h4 id="typical-use-cases">Typical Use Cases</h4>
+<ul>
+<li>Simple batch processing queues</li>
+<li>Print spoolers</li>
+<li>Foundational building block for more complex schedulers</li>
+</ul>
+<h4 id="execution-example">Execution Example</h4>
+<p>Consider the following set of processes:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Arrival Time</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>0</td>
+<td>6 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>1</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>2</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>3</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>4</td>
+<td>1 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Since <strong>FCFS executes processes strictly in the order they arrive</strong>, once a process starts executing it <strong>runs until completion</strong> before the next process begins.</p>
+<p>At <strong>time 0</strong>, only <strong>P1</strong> has arrived, so the CPU starts executing <strong>P1</strong>. Even though <strong>P2, P3, P4, and P5</strong> arrive while P1 is running, they must wait in the ready queue.</p>
+<p>Execution proceeds as follows:</p>
+<ul>
+<li><strong>P1</strong> executes from <strong>0 → 6</strong></li>
+<li><strong>P2</strong> executes from <strong>6 → 8</strong></li>
+<li><strong>P3</strong> executes from <strong>8 → 12</strong></li>
+<li><strong>P4</strong> executes from <strong>12 → 15</strong></li>
+<li><strong>P5</strong> executes from <strong>15 → 16</strong></li>
+</ul>
+<p>The resulting <strong>Gantt Chart</strong> is:</p>
+<img alt="" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/research/cpu-scheduling/img04.png" />
+<h4 id="implementation-in-c">Implementation in C</h4>
+<pre><code class="lang-c">#include &lt;stdio.h&gt;
+
+int main() {
+    int n, i;
+    int at[20], bt[20], wt[20], ct[20], tat[20];
+    float wtavg = 0, tatavg = 0;
+
+    printf(&quot;Enter the number of processes: &quot;);
+    scanf(&quot;%d&quot;, &amp;n);
+
+    for (i = 0; i &lt; n; i++) {
+        printf(&quot;Enter arrival time and burst time for process P%d: &quot;, i + 1);
+        scanf(&quot;%d %d&quot;, &amp;at[i], &amp;bt[i]);
+    }
+
+    // First process starts immediately at its arrival time
+    ct[0]  = at[0] + bt[0];
+    tat[0] = ct[0] - at[0];
+    wt[0]  = 0;
+    tatavg = tat[0];
+
+    for (i = 1; i &lt; n; i++) {
+        // If CPU is idle between processes, account for the gap
+        ct[i]  = (ct[i - 1] &gt; at[i] ? ct[i - 1] : at[i]) + bt[i];
+        wt[i]  = ct[i] - at[i] - bt[i];
+        tat[i] = ct[i] - at[i];
+        wtavg  += wt[i];
+        tatavg += tat[i];
+    }
+
+    wtavg  /= n;
+    tatavg /= n;
+
+    printf(&quot;\n%-10s %-12s %-10s %-14s %-12s %-16s\n&quot;,
+           &quot;Process&quot;, &quot;Arrival_T&quot;, &quot;Burst_T&quot;, &quot;Complete_T&quot;, &quot;Waiting_T&quot;, &quot;Turnaround_T&quot;);
+    for (i = 0; i &lt; n; i++) {
+        printf(&quot;%-10s %-12d %-10d %-14d %-12d %-16d\n&quot;,
+               (char[]){'P', '0' + i + 1, '\0'}, at[i], bt[i], ct[i], wt[i], tat[i]);
+    }
+
+    printf(&quot;\nGantt Chart:\n|&quot;);
+    for (i = 0; i &lt; n; i++) printf(&quot; P%d |&quot;, i + 1);
+    printf(&quot;\n0&quot;);
+    for (i = 0; i &lt; n; i++) printf(&quot;\t%d&quot;, ct[i]);
+    printf(&quot;\n&quot;);
+
+    printf(&quot;\nAverage Waiting Time   : %.2f ms\n&quot;, wtavg);
+    printf(&quot;Average Turnaround Time: %.2f ms\n&quot;, tatavg);
+
+    return 0;
+}
+</code></pre>
+<h3 id="shortest-job-first-sjf">Shortest Job First (SJF)</h3>
+<p>SJF selects the process in the ready queue with the smallest burst time. It is <strong>non-preemptive</strong>: once a process starts, it runs to completion. Among processes with equal burst times, FCFS tie-breaking applies.</p>
+<p>SJF is <strong>provably optimal</strong> for minimizing average waiting time among non-preemptive algorithms — but it requires knowing burst times in advance, which is generally impossible in practice. Real systems estimate them from historical CPU usage using exponential averaging.</p>
+<h4 id="advantages_1">Advantages</h4>
+<ul>
+<li>Minimizes average waiting time among all non-preemptive algorithms</li>
+<li>High throughput for mixed-length workloads</li>
+</ul>
+<h4 id="disadvantages_1">Disadvantages</h4>
+<ul>
+<li><strong>Starvation:</strong> Long processes may never execute if shorter ones keep arriving</li>
+<li>Requires accurate burst time prediction — estimation error propagates into suboptimal decisions</li>
+<li>Not suitable for interactive workloads in its non-preemptive form</li>
+</ul>
+<h4 id="typical-use-cases_1">Typical Use Cases</h4>
+<ul>
+<li>Batch schedulers where job run-time estimates are available (e.g., HPC clusters with declared job times)</li>
+<li>Database query planners (analogous "shortest query first" heuristics)</li>
+</ul>
+<h4 id="execution-example_1">Execution Example</h4>
+<p>Consider the following set of processes:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Arrival Time</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>0</td>
+<td>7 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>1</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>2</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>3</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>4</td>
+<td>6 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Since <strong>SJF</strong> always selects the process with the <strong>smallest burst time</strong> among those currently in the ready queue, scheduling decisions are based on job length rather than arrival order.</p>
+<p>At <strong>time 0</strong>, only <strong>P1</strong> has arrived, so the CPU begins executing <strong>P1</strong>. Because this version of SJF is <strong>non-preemptive</strong>, <strong>P1 continues running until it finishes</strong>, even though shorter jobs arrive later.</p>
+<p>During the execution of <strong>P1</strong>, the remaining processes arrive and wait in the ready queue.</p>
+<p>At <strong>time 7</strong>, <strong>P1</strong> finishes. The scheduler selects the process with the <strong>shortest burst time</strong> from the queue:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P2</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>6 ms</td>
+</tr>
+</tbody>
+</table>
+<p>The shortest job is <strong>P4</strong>, so it executes next. Execution proceeds as follows:</p>
+<ul>
+<li><strong>P1</strong> executes from <strong>0 → 7</strong></li>
+<li><strong>P4</strong> executes from <strong>7 → 9</strong></li>
+<li><strong>P2</strong> executes from <strong>9 → 12</strong></li>
+<li><strong>P3</strong> executes from <strong>12 → 16</strong></li>
+<li><strong>P5</strong> executes from <strong>16 → 22</strong></li>
+</ul>
+<p>The resulting <strong>Gantt Chart</strong> is:</p>
+<img alt="" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/research/cpu-scheduling/img05.png" />
+<h4 id="implementation-in-c_1">Implementation in C</h4>
+<pre><code class="lang-c">#include &lt;stdio.h&gt;
+
+int main() {
+    int n, i, j, pos;
+    int at[20], bt[20], wt[20], ct[20], tat[20], temp_bt[20], temp_at[20], order[20];
+    float wtavg = 0, tatavg = 0;
+    int current_time = 0, completed = 0;
+    int visited[20] = {0};
+
+    printf(&quot;Enter the number of processes: &quot;);
+    scanf(&quot;%d&quot;, &amp;n);
+
+    for (i = 0; i &lt; n; i++) {
+        printf(&quot;Enter arrival time and burst time for process P%d: &quot;, i + 1);
+        scanf(&quot;%d %d&quot;, &amp;at[i], &amp;bt[i]);
+        temp_bt[i] = bt[i];
+        temp_at[i] = at[i];
+    }
+
+    // Non-preemptive SJF: simulate step by step
+    int exec_order[20];
+    int exec_count = 0;
+
+    while (completed &lt; n) {
+        // Find shortest available job at current_time
+        int min_bt = 99999, sel = -1;
+        for (i = 0; i &lt; n; i++) {
+            if (!visited[i] &amp;&amp; at[i] &lt;= current_time) {
+                if (bt[i] &lt; min_bt) {
+                    min_bt = bt[i];
+                    sel = i;
+                } else if (bt[i] == min_bt &amp;&amp; at[i] &lt; at[sel]) {
+                    sel = i;
+                }
+            }
+        }
+
+        if (sel == -1) {
+            // CPU idle — advance to next arrival
+            int next = 99999;
+            for (i = 0; i &lt; n; i++)
+                if (!visited[i] &amp;&amp; at[i] &lt; next) next = at[i];
+            current_time = next;
+            continue;
+        }
+
+        visited[sel]   = 1;
+        current_time  += bt[sel];
+        ct[sel]        = current_time;
+        tat[sel]       = ct[sel] - at[sel];
+        wt[sel]        = tat[sel] - bt[sel];
+        wtavg         += wt[sel];
+        tatavg        += tat[sel];
+        exec_order[exec_count++] = sel;
+        completed++;
+    }
+
+    wtavg  /= n;
+    tatavg /= n;
+
+    printf(&quot;\n%-10s %-12s %-10s %-14s %-12s %-16s\n&quot;,
+           &quot;Process&quot;, &quot;Arrival_T&quot;, &quot;Burst_T&quot;, &quot;Complete_T&quot;, &quot;Waiting_T&quot;, &quot;Turnaround_T&quot;);
+    for (i = 0; i &lt; n; i++) {
+        printf(&quot;%-10s %-12d %-10d %-14d %-12d %-16d\n&quot;,
+               (char[]){'P', '0' + i + 1, '\0'}, at[i], bt[i], ct[i], wt[i], tat[i]);
+    }
+
+    printf(&quot;\nGantt Chart:\n|&quot;);
+    for (i = 0; i &lt; exec_count; i++) printf(&quot; P%d |&quot;, exec_order[i] + 1);
+    printf(&quot;\n&quot;);
+
+    printf(&quot;\nAverage Waiting Time   : %.2f ms\n&quot;, wtavg);
+    printf(&quot;Average Turnaround Time: %.2f ms\n&quot;, tatavg);
+
+    return 0;
+}
+</code></pre>
+<h3 id="shortest-remaining-time-first-srtf">Shortest Remaining Time First (SRTF)</h3>
+<p>SRTF is the <strong>preemptive version of SJF</strong>. Whenever a new process arrives, the scheduler compares its burst time against the <em>remaining</em> burst time of the currently running process. If the newcomer is shorter, it immediately preempts the current process.</p>
+<p>SRTF is theoretically optimal for minimizing average waiting time among all scheduling algorithms — preemptive or otherwise — for the same reasons SJF is optimal in the non-preemptive case.</p>
+<h4 id="advantages_2">Advantages</h4>
+<ul>
+<li>Theoretically optimal average waiting time</li>
+<li>Short jobs get immediate service regardless of when they arrive</li>
+</ul>
+<h4 id="disadvantages_2">Disadvantages</h4>
+<ul>
+<li>Starvation of long processes can be severe</li>
+<li>Requires continuous tracking of remaining burst time</li>
+<li>High context-switch frequency increases overhead</li>
+<li>Burst time prediction error is more damaging than in SJF</li>
+</ul>
+<h4 id="typical-use-cases_2">Typical Use Cases</h4>
+<ul>
+<li>Theoretical baseline for evaluating other algorithms</li>
+<li>Approximated in systems with accurate CPU profiling (some batch schedulers)</li>
+</ul>
+<h4 id="execution-example_2">Execution Example</h4>
+<p>Consider the following set of processes:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Arrival Time</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>0</td>
+<td>7 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>2</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>3</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>5</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>6</td>
+<td>1 ms</td>
+</tr>
+</tbody>
+</table>
+<p>At <strong>time 0</strong>, only <strong>P1</strong> has arrived in the ready queue, so the CPU starts executing <strong>P1</strong>.</p>
+<p>At <strong>time 2</strong>, <strong>P2</strong> arrives. The scheduler compares the <strong>remaining time of P1 (5 ms)</strong> with the <strong>burst time of P2 (4 ms)</strong>. Since <strong>P2 is shorter</strong>, it <strong>preempts P1</strong> and begins execution.</p>
+<p>At <strong>time 3</strong>, <strong>P3</strong> arrives with a burst time of <strong>2 ms</strong>. The scheduler compares all remaining processes:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Remaining Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>5 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>2 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Since <strong>P3 has the shortest remaining time</strong>, <strong>P2 is preempted</strong> and the CPU is assigned to <strong>P3</strong>.</p>
+<p><strong>P3</strong> executes until <strong>time 5</strong>, when it finishes. At this moment <strong>P4</strong> arrives.</p>
+<p>Remaining processes:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Remaining Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>5 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>3 ms</td>
+</tr>
+</tbody>
+</table>
+<p>The scheduler selects <strong>P2</strong> (tie broken by earlier arrival), which executes from <strong>time 5 to time 6</strong>.</p>
+<p>At <strong>time 6</strong>, <strong>P5</strong> arrives with a burst time of <strong>1 ms</strong>, which is shorter than the remaining time of <strong>P2 (2 ms)</strong>. Therefore, <strong>P2 is preempted again</strong>, and the CPU is allocated to <strong>P5</strong>.</p>
+<p>Execution continues as follows:</p>
+<ul>
+<li><strong>P1</strong> executes from <strong>0 → 2</strong></li>
+<li><strong>P2</strong> executes from <strong>2 → 3</strong></li>
+<li><strong>P3</strong> executes from <strong>3 → 5</strong></li>
+<li><strong>P2</strong> executes from <strong>5 → 6</strong></li>
+<li><strong>P5</strong> executes from <strong>6 → 7</strong></li>
+<li><strong>P2</strong> executes from <strong>7 → 9</strong></li>
+<li><strong>P4</strong> executes from <strong>9 → 12</strong></li>
+<li><strong>P1</strong> executes from <strong>12 → 17</strong></li>
+</ul>
+<p>The resulting <strong>Gantt Chart</strong> is:</p>
+<img alt="" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/research/cpu-scheduling/img06.png" />
+<h4 id="implementation-in-c_2">Implementation in C</h4>
+<pre><code class="lang-c">#include &lt;stdio.h&gt;
+
+int main() {
+    int n, i;
+    int at[20], bt[20], remaining[20], wt[20], ct[20], tat[20];
+    float wtavg = 0, tatavg = 0;
+    int completed = 0, current_time = 0, min_rem, sel;
+    int done[20] = {0};
+
+    printf(&quot;Enter the number of processes: &quot;);
+    scanf(&quot;%d&quot;, &amp;n);
+
+    for (i = 0; i &lt; n; i++) {
+        printf(&quot;Enter arrival time and burst time for process P%d: &quot;, i + 1);
+        scanf(&quot;%d %d&quot;, &amp;at[i], &amp;bt[i]);
+        remaining[i] = bt[i];
+    }
+
+    while (completed &lt; n) {
+        min_rem = 99999;
+        sel     = -1;
+
+        for (i = 0; i &lt; n; i++) {
+            if (!done[i] &amp;&amp; at[i] &lt;= current_time &amp;&amp; remaining[i] &lt; min_rem) {
+                min_rem = remaining[i];
+                sel     = i;
+            }
+        }
+
+        if (sel == -1) {
+            current_time++;
+            continue;
+        }
+
+        remaining[sel]--;
+        current_time++;
+
+        if (remaining[sel] == 0) {
+            done[sel]  = 1;
+            ct[sel]    = current_time;
+            tat[sel]   = ct[sel] - at[sel];
+            wt[sel]    = tat[sel] - bt[sel];
+            wtavg     += wt[sel];
+            tatavg    += tat[sel];
+            completed++;
+        }
+    }
+
+    wtavg  /= n;
+    tatavg /= n;
+
+    printf(&quot;\n%-10s %-12s %-10s %-14s %-12s %-16s\n&quot;,
+           &quot;Process&quot;, &quot;Arrival_T&quot;, &quot;Burst_T&quot;, &quot;Complete_T&quot;, &quot;Waiting_T&quot;, &quot;Turnaround_T&quot;);
+    for (i = 0; i &lt; n; i++) {
+        printf(&quot;%-10s %-12d %-10d %-14d %-12d %-16d\n&quot;,
+               (char[]){'P', '0' + i + 1, '\0'}, at[i], bt[i], ct[i], wt[i], tat[i]);
+    }
+
+    printf(&quot;\nAverage Waiting Time   : %.2f ms\n&quot;, wtavg);
+    printf(&quot;Average Turnaround Time: %.2f ms\n&quot;, tatavg);
+
+    return 0;
+}
+</code></pre>
+<h3 id="round-robin-rr">Round Robin (RR)</h3>
+<p>Round Robin assigns each process a fixed <strong>time quantum</strong> (also called a time slice). Processes execute in FIFO order, but no process runs for more than one quantum before being preempted and moved to the back of the ready queue. If a process completes before its quantum expires, the CPU is immediately given to the next process.</p>
+<p>Round Robin is the backbone of modern interactive schedulers. Its fairness is structural — every process gets CPU time within at most <code>(n − 1) × quantum</code> time units.</p>
+<h4 id="advantages_3">Advantages</h4>
+<ul>
+<li>Strong fairness guarantee — no process waits more than <code>(n-1) × Q</code> time units</li>
+<li>Good response time for interactive workloads</li>
+<li>No starvation possible</li>
+</ul>
+<h4 id="disadvantages_3">Disadvantages</h4>
+<ul>
+<li>Average waiting time is often higher than SJF for identical workloads</li>
+<li>Performance is sensitive to quantum size:</li>
+<li><strong>Too small:</strong> Context-switch overhead dominates useful work</li>
+<li><strong>Too large:</strong> Degenerates toward FCFS behavior</li>
+<li>Higher context-switch cost than non-preemptive algorithms</li>
+</ul>
+<h4 id="typical-use-cases_3">Typical Use Cases</h4>
+<ul>
+<li>General-purpose desktop and server operating systems (as a component of more complex schedulers)</li>
+<li>Time-sharing systems where equal treatment of interactive users is the primary goal</li>
+<li>Virtual machine CPU time-sharing between guests</li>
+</ul>
+<h4 id="execution-example_3">Execution Example</h4>
+<p>Consider the following processes and a <strong>time quantum (Q) = 3 ms</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Arrival Time</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>0</td>
+<td>7 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>1</td>
+<td>5 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>2</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>3</td>
+<td>4 ms</td>
+</tr>
+</tbody>
+</table>
+<p>At <strong>time 0</strong>, only <strong>P1</strong> is in the ready queue, so it begins execution. Since the quantum is <strong>3 ms</strong>, P1 executes for <strong>3 ms</strong> and is then preempted because it still has remaining burst time.</p>
+<p>Remaining processes after the first quantum:</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Remaining Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>5 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>4 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Execution proceeds in <strong>FIFO order</strong>, with each process receiving at most one quantum per turn:</p>
+<ul>
+<li><strong>P1</strong> executes from <strong>0 → 3</strong> (remaining: 4)</li>
+<li><strong>P2</strong> executes from <strong>3 → 6</strong> (remaining: 2)</li>
+<li><strong>P3</strong> executes from <strong>6 → 9</strong> (finishes)</li>
+<li><strong>P4</strong> executes from <strong>9 → 12</strong> (remaining: 1)</li>
+<li><strong>P1</strong> executes from <strong>12 → 15</strong> (remaining: 1)</li>
+<li><strong>P2</strong> executes from <strong>15 → 17</strong> (finishes)</li>
+<li><strong>P4</strong> executes from <strong>17 → 18</strong> (finishes)</li>
+<li><strong>P1</strong> executes from <strong>18 → 19</strong> (finishes)</li>
+</ul>
+<p>The resulting <strong>Gantt Chart</strong> is:</p>
+<img alt="" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/research/cpu-scheduling/img07.png" />
+<h4 id="implementation-in-c_3">Implementation in C</h4>
+<pre><code class="lang-c">#include &lt;stdio.h&gt;
+
+int main() {
+    int n, i, quantum;
+    int at[20], bt[20], remaining[20], wt[20], ct[20], tat[20];
+    float wtavg = 0, tatavg = 0;
+    int current_time = 0, completed = 0;
+    int queue[200], front = 0, rear = 0;
+    int in_queue[20] = {0};
+
+    printf(&quot;Enter the number of processes: &quot;);
+    scanf(&quot;%d&quot;, &amp;n);
+
+    for (i = 0; i &lt; n; i++) {
+        printf(&quot;Enter arrival time and burst time for process P%d: &quot;, i + 1);
+        scanf(&quot;%d %d&quot;, &amp;at[i], &amp;bt[i]);
+        remaining[i] = bt[i];
+    }
+
+    printf(&quot;Enter the time quantum: &quot;);
+    scanf(&quot;%d&quot;, &amp;quantum);
+
+    // Enqueue process 0 if it arrives at time 0
+    for (i = 0; i &lt; n; i++) {
+        if (at[i] == 0) {
+            queue[rear++] = i;
+            in_queue[i]   = 1;
+        }
+    }
+
+    while (completed &lt; n) {
+        if (front == rear) {
+            // Queue empty — advance time to next arrival
+            current_time++;
+            for (i = 0; i &lt; n; i++) {
+                if (!in_queue[i] &amp;&amp; remaining[i] &gt; 0 &amp;&amp; at[i] &lt;= current_time) {
+                    queue[rear++] = i;
+                    in_queue[i]   = 1;
+                }
+            }
+            continue;
+        }
+
+        int p = queue[front++];
+
+        int run_time = (remaining[p] &lt; quantum) ? remaining[p] : quantum;
+        current_time   += run_time;
+        remaining[p]   -= run_time;
+
+        // Enqueue newly arrived processes during this slice
+        for (i = 0; i &lt; n; i++) {
+            if (!in_queue[i] &amp;&amp; remaining[i] &gt; 0 &amp;&amp; at[i] &lt;= current_time) {
+                queue[rear++] = i;
+                in_queue[i]   = 1;
+            }
+        }
+
+        if (remaining[p] == 0) {
+            ct[p]    = current_time;
+            tat[p]   = ct[p] - at[p];
+            wt[p]    = tat[p] - bt[p];
+            wtavg   += wt[p];
+            tatavg  += tat[p];
+            completed++;
+        } else {
+            // Re-enqueue for the next round
+            queue[rear++] = p;
+        }
+    }
+
+    wtavg  /= n;
+    tatavg /= n;
+
+    printf(&quot;\n%-10s %-12s %-10s %-14s %-12s %-16s\n&quot;,
+           &quot;Process&quot;, &quot;Arrival_T&quot;, &quot;Burst_T&quot;, &quot;Complete_T&quot;, &quot;Waiting_T&quot;, &quot;Turnaround_T&quot;);
+    for (i = 0; i &lt; n; i++) {
+        printf(&quot;%-10s %-12d %-10d %-14d %-12d %-16d\n&quot;,
+               (char[]){'P', '0' + i + 1, '\0'}, at[i], bt[i], ct[i], wt[i], tat[i]);
+    }
+
+    printf(&quot;\nAverage Waiting Time   : %.2f ms\n&quot;, wtavg);
+    printf(&quot;Average Turnaround Time: %.2f ms\n&quot;, tatavg);
+
+    return 0;
+}
+</code></pre>
+<h3 id="algorithm-comparison">Algorithm Comparison</h3>
+<table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Type</th>
+<th>Fairness</th>
+<th>Complexity</th>
+<th>Starvation Risk</th>
+<th>Optimal For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FCFS</td>
+<td>Non-preemptive</td>
+<td>Arrival-order fair</td>
+<td>O(1) enqueue</td>
+<td>None</td>
+<td>Simple batch workloads</td>
+</tr>
+<tr>
+<td>SJF</td>
+<td>Non-preemptive</td>
+<td>Biased toward short jobs</td>
+<td>O(n) selection</td>
+<td>Long processes</td>
+<td>Batch with known burst times</td>
+</tr>
+<tr>
+<td>SRTF</td>
+<td>Preemptive</td>
+<td>Biased toward short jobs</td>
+<td>O(n) on arrival</td>
+<td>Long processes</td>
+<td>Minimizing avg WT (theoretical)</td>
+</tr>
+<tr>
+<td>Round Robin</td>
+<td>Preemptive</td>
+<td>Time-equal</td>
+<td>O(1)</td>
+<td>None</td>
+<td>Interactive, time-sharing</td>
+</tr>
+</tbody>
+</table>
+<h3 id="comparative-example">Comparative Example</h3>
+<p>To better understand the behavior of each scheduling algorithm, consider the <strong>same set of processes</strong> executed under different schedulers.</p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Arrival Time</th>
+<th>Burst Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>0</td>
+<td>7 ms</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>1</td>
+<td>4 ms</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>2</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>3</td>
+<td>3 ms</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>4</td>
+<td>1 ms</td>
+</tr>
+</tbody>
+</table>
+<h4 id="fcfs">FCFS</h4>
+<p>Processes execute strictly in arrival order.</p>
+<p>Execution order:</p>
+<pre><code>P1 → P2 → P3 → P4 → P5
+</code></pre>
+<ul>
+<li>Avg Waiting Time: <strong>9.2 ms</strong></li>
+<li>Avg Turnaround Time: <strong>12.6 ms</strong></li>
+</ul>
+<h4 id="sjf-non-preemptive">SJF (Non-Preemptive)</h4>
+<p>After the first process finishes, the scheduler selects the <strong>shortest job in the ready queue</strong>.</p>
+<p>Execution order:</p>
+<pre><code>P1 → P5 → P3 → P4 → P2
+</code></pre>
+<ul>
+<li>Avg Waiting Time: <strong>7.0 ms</strong></li>
+<li>Avg Turnaround Time: <strong>10.4 ms</strong></li>
+</ul>
+<h4 id="srtf-preemptive-sjf">SRTF (Preemptive SJF)</h4>
+<p>Processes can <strong>interrupt the currently running job</strong> if they have a shorter remaining time.</p>
+<p>Execution order (timeline):</p>
+<pre><code>P1 → P3 → P5 → P3 → P4 → P2 → P1
+</code></pre>
+<ul>
+<li>Avg Waiting Time: <strong>3.6 ms</strong></li>
+<li>Avg Turnaround Time: <strong>7.0 ms</strong></li>
+</ul>
+<h4 id="round-robin-q-3">Round Robin (Q = 3)</h4>
+<p>Each process runs for <strong>at most 3 ms</strong> before being preempted and moved to the back of the queue.</p>
+<p>Execution order:</p>
+<pre><code>P1 → P2 → P3 → P4 → P5 → P1 → P2 → P4 → P1
+</code></pre>
+<ul>
+<li>Avg Waiting Time: <strong>9.0 ms</strong></li>
+<li>Avg Turnaround Time: <strong>12.4 ms</strong></li>
+</ul>
+<h4 id="summary">Summary</h4>
+<table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Avg WT</th>
+<th>Avg TAT</th>
+<th>Characteristic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FCFS</td>
+<td>9.2</td>
+<td>12.6</td>
+<td>Simple but prone to convoy effect</td>
+</tr>
+<tr>
+<td>SJF</td>
+<td>7.0</td>
+<td>10.4</td>
+<td>Better for short jobs</td>
+</tr>
+<tr>
+<td>SRTF</td>
+<td><strong>3.6</strong></td>
+<td><strong>7.0</strong></td>
+<td>Best average waiting time</td>
+</tr>
+<tr>
+<td>RR (Q=3)</td>
+<td>9.0</td>
+<td>12.4</td>
+<td>Fair and responsive</td>
+</tr>
+</tbody>
+</table>
+<p>The results confirm the theoretical expectations: SRTF delivers the lowest average waiting time, but at the cost of frequent preemptions and potential starvation of long jobs. Round Robin provides strong fairness with no starvation risk, though its average waiting time is comparable to FCFS for this workload. SJF sits in the middle — better than FCFS without the overhead of continuous preemption.</p>
+<h2 id="real-os-scheduling">Real OS Scheduling</h2>
+<p>The algorithms covered so far are clean abstractions. Real OS schedulers are more complex — they must handle hundreds of concurrent processes, NUMA topologies, heterogeneous core types, energy management, and security isolation. Here is how the two dominant platforms approach the problem.</p>
+<h3 id="linux-completely-fair-scheduler-cfs">Linux: Completely Fair Scheduler (CFS)</h3>
+<p><strong>Introduced:</strong> Linux 2.6.23 (2007), replacing the O(1) scheduler.</p>
+<h4 id="fairness-model">Fairness Model</h4>
+<p>CFS does not use time slices in the traditional sense. Instead, it tracks each process's <strong>virtual runtime</strong> (<code>vruntime</code>) — the amount of CPU time it has consumed, normalized by its priority weight. The scheduler always picks the process with the lowest <code>vruntime</code> — the one that has received the least CPU time relative to its entitlement.</p>
+<p>This creates a fair allocation without requiring explicit time quantum bookkeeping: a process that has been waiting automatically accumulates a lower <code>vruntime</code>, making it the preferred candidate.</p>
+<h4 id="red-black-tree-structure">Red-Black Tree Structure</h4>
+<p>Ready processes are stored in a <strong>self-balancing red-black tree</strong>, indexed by <code>vruntime</code>. The leftmost node (minimum <code>vruntime</code>) is cached for O(1) access. When a process is selected to run, it is removed from the tree; when it is preempted, its updated <code>vruntime</code> is inserted back in the correct position in O(log n).</p>
+<p>This gives CFS O(log n) scheduling decisions and O(1) best-candidate lookup — efficient even with thousands of runnable tasks.</p>
+<h4 id="priority-integration">Priority Integration</h4>
+<p>Linux <code>nice</code> values (−20 to +19) are translated into <strong>load weight</strong> multipliers. A process with <code>nice=-20</code> has approximately 10× the weight of a <code>nice=0</code> process. CFS advances <code>vruntime</code> more slowly for high-weight processes, giving them more real CPU time per unit of virtual time.</p>
+<h4 id="key-characteristics">Key Characteristics</h4>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>CFS Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Algorithm base</td>
+<td>Weighted fair queuing</td>
+</tr>
+<tr>
+<td>Data structure</td>
+<td>Red-black tree (per run queue, per NUMA node)</td>
+</tr>
+<tr>
+<td>Preemption</td>
+<td>Yes, on tick and on wakeup</td>
+</tr>
+<tr>
+<td>Default time slice</td>
+<td>Dynamic (scales with number of runnable tasks)</td>
+</tr>
+<tr>
+<td>Starvation</td>
+<td>Prevented by design (vruntime normalization)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="windows-priority-based-scheduler-with-dynamic-feedback">Windows: Priority-Based Scheduler with Dynamic Feedback</h3>
+<h4 id="priority-model">Priority Model</h4>
+<p>Windows uses a 32-level priority scheme (0–31). Real-time processes occupy levels 16–31; normal user processes occupy levels 1–15; the idle thread sits at level 0. The kernel always runs the highest-priority ready thread. Among equal priorities, Round Robin with a time quantum applies.</p>
+<h4 id="multi-level-feedback-queues">Multi-Level Feedback Queues</h4>
+<p>Windows maintains a separate ready queue for each of the 32 priority levels. The scheduler scans from level 31 downward to find the highest non-empty queue. This gives O(1) scheduling decisions for the common case.</p>
+<h4 id="dynamic-priorities">Dynamic Priorities</h4>
+<p>To prevent starvation of lower-priority threads and to reward I/O-bound behavior, Windows applies temporary <strong>priority boosts</strong>:</p>
+<ul>
+<li>A thread woken from I/O wait receives a boost proportional to the I/O type (disk: +1, keyboard: +6, etc.)</li>
+<li>A thread that has not run for a long time (starvation detection) receives a temporary boost to level 15 for two quanta</li>
+<li>Foreground application threads receive a larger quantum multiplier (configurable, typically 3×)</li>
+</ul>
+<h4 id="key-characteristics_1">Key Characteristics</h4>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Windows Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Algorithm base</td>
+<td>Preemptive multi-level priority + RR within level</td>
+</tr>
+<tr>
+<td>Priority levels</td>
+<td>32 (0=idle, 1–15=normal, 16–31=real-time)</td>
+</tr>
+<tr>
+<td>Quantum</td>
+<td>Variable (foreground: ~60–120ms, background: ~20–40ms)</td>
+</tr>
+<tr>
+<td>Starvation mitigation</td>
+<td>Aging-based priority boost</td>
+</tr>
+<tr>
+<td>API</td>
+<td><code>SetThreadPriority()</code>, <code>SetPriorityClass()</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusion">Conclusion</h2>
+<p>CPU scheduling sits at the intersection of theory and engineering pragmatism. The classical algorithms — FCFS, SJF, SRTF, and Round Robin — define a clean design space with well-understood trade-offs: you can optimize for minimum average waiting time (SRTF), for fairness (RR), or for simplicity (FCFS), but not all three simultaneously.</p>
+<p>Real schedulers are composites. Linux CFS applies weighted fair queuing with an elegant vruntime abstraction that eliminates starvation while accommodating priorities. Windows combines strict priority preemption with dynamic feedback to balance responsiveness for interactive threads against throughput for background work. Both systems have evolved significantly over decades precisely because the problem is genuinely hard — workloads are diverse, hardware is heterogeneous, and the cost of a wrong decision scales with the number of users sharing the machine.</p>
+<p>For the systems programmer, the practical takeaways are:</p>
+<ul>
+<li><strong>Profile before assuming.</strong> The scheduler that looks optimal on paper may behave differently under your specific workload's arrival and burst distributions.</li>
+<li><strong>Match the scheduler to the workload class.</strong> Batch jobs, interactive processes, and real-time tasks have fundamentally different requirements and belong in different scheduling classes.</li>
+<li><strong>Respect the overhead model.</strong> Context switches are not free. Spinning up thousands of threads to "maximize parallelism" on a 4-core machine will often be slower than a smaller, carefully scheduled pool.</li>
+<li><strong>Understand the tools your OS gives you.</strong> <code>nice</code>, <code>taskset</code>, <code>cgroups</code>, <code>SCHED_FIFO</code>, <code>SCHED_RR</code>, <code>SCHED_DEADLINE</code> — these are production handles on the scheduler that every senior engineer should be comfortable reaching for.</li>
+</ul>
+<p>Scheduling is not a solved problem. Multi-core NUMA machines, heterogeneous CPU architectures, and the pressure to reduce energy consumption continue to push the state of the art. The foundational algorithms in this article are the vocabulary — the real sentences are still being written.</p>
+<h2 id="references">References</h2>
+<ul>
+<li>Silberschatz, A., Galvin, P. B., &amp; Gagne, G. — <em>Operating System Concepts</em>, 10th ed. (Wiley, 2018)</li>
+<li>Tanenbaum, A. S. — <em>Modern Operating Systems</em>, 4th ed. (Pearson, 2014)</li>
+<li><a href="https://www.kernel.org/doc/html/latest/scheduler/sched-design-CFS.html">Linux CFS Scheduler Documentation</a></li>
+<li><a href="https://man7.org/linux/man-pages/man7/sched.7.html">Linux <code>sched(7)</code> man page</a></li>
+<li>Jones, M. T. — <a href="https://developer.ibm.com/tutorials/l-completely-fair-scheduler/">Inside the Linux Scheduler</a> (IBM Developer, 2009)</li>
+<li><a href="https://learn.microsoft.com/en-us/windows/win32/procthread/scheduling-priorities">Windows Scheduling — Microsoft Docs</a></li>
+<li>Molnar, I. — <a href="https://www.kernel.org/doc/Documentation/scheduler/sched-design-CFS.txt">CFS Scheduler Design</a> (kernel.org, 2007)</li>
+</ul>
+      </div>
+    </article>
+    <aside class="col-sidebar"></aside>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-main">
+      <div class="footer-col">
+        <div class="footer-col-label">Zirov</div>
+        <div class="footer-brand"><svg style="width:22px;height:23px;flex-shrink:0;display:block;" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg"><path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/><path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/></svg><span class="footer-brand-text">Ziro<em>v</em></span></div>
+        <p class="footer-tagline">CTF writeups · malware analysis<br>offensive research · built for the curious mind.</p>
+        <a href="https://buymeacoffee.com/zirov" target="_blank" rel="noopener noreferrer" class="footer-coffee">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          <div class="footer-coffee-text"><span class="footer-coffee-label">Support the work</span><span class="footer-coffee-sub">Buy me a coffee</span></div>
+          <svg class="footer-coffee-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-label">Explore</div>
+        <nav class="footer-links">
+          <a href="/#writeups"  class="footer-link"><span class="footer-link-arr">›</span>Writeups</a>
+          <a href="/#research"  class="footer-link"><span class="footer-link-arr">›</span>Research</a>
+          <a href="/#scripting" class="footer-link"><span class="footer-link-arr">›</span>Scripting</a>
+          <a href="/#notes"     class="footer-link"><span class="footer-link-arr">›</span>Notes</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-label">Connect</div>
+        <div class="footer-socials">
+          <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="footer-soc"><svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg> GitHub</a>
+          <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="footer-soc"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg> LinkedIn</a>
+          <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="footer-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg> HackTheBox</a>
+          <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener" class="footer-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg> Discord</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <span class="footer-copy">© 2026 <em>Zirov</em> · All rights reserved.</span>
+      <div class="footer-bar-links"><a href="#" class="footer-bar-link">Privacy</a><a href="#" class="footer-bar-link">RSS</a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script src="/js/post.js"></script>
+  <script src="/js/search.js"></script>
+  <script src="/js/analytics.js"></script>
+</body>
+</html>
