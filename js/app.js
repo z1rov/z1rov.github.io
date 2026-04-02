@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   ZureFX — app.js  (v3)
+   Zirov — app.js  (v3)
    Sistema de carga por sección con paginación remota para "all".
 
    CAMBIO PRINCIPAL (v3)

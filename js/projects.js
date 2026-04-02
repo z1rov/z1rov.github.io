@@ -1,5 +1,5 @@
 /* ============================================================
-   ZureFX — projects.js  (v3)
+   Zirov — projects.js  (v3)
    Carga desde data/research.json (proyectos).
 
    CAMBIO v3

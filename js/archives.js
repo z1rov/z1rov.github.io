@@ -1,5 +1,5 @@
 /* ============================================================
-   ZureFX — archives.js  (v4)
+   Zirov — archives.js  (v4)
    Carga desde data/posts-recent.json (últimos ~50 posts).
    Si no existe, cae a data/posts.json como fallback.
    Reutiliza CACHE de app.js cuando está disponible.

@@ -1,5 +1,5 @@
 /* ============================================================
-   ZureFX — notes.js  (v6)
+   Zirov — notes.js  (v6)
    Reutiliza CACHE['notes'] de app.js si ya está cargado.
    Carga plana desde data/notes.json como fallback.
    Depende de app.js: getRootPrefix(), fmtDate(), capitalize(),

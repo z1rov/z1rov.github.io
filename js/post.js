@@ -1,5 +1,5 @@
 /**
- * ZureFX — post.js
+ * Zirov — post.js
  * TOC dinámico con accordion hover · Scroll spy · Progress bar
  * Copy buttons · Table wrap · Scrollbar hover · Menu
  */

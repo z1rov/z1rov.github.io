@@ -1,5 +1,5 @@
 /* ============================================================
-   ZureFX — profile.js
+   Zirov — profile.js
    Carga los posts más recientes desde for-you.json y los
    renderiza en la página de perfil.
    Depende de app.js (cargado antes): getRootPrefix(),

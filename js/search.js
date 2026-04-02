@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   ZureFX — search.js  (v3)
+   Zirov — search.js  (v3)
    Carga progresiva por páginas desde data/post/post-N.json.
 
    CAMBIO v3

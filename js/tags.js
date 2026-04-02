@@ -1,5 +1,5 @@
 /* ============================================================
-   ZureFX — tags.js  (v6)
+   Zirov — tags.js  (v6)
    - Índice (tags.html)       → solo tag cloud (pills), sin posts
    - Filtro  (tags.html#tag)  → lista posts del tag seleccionado
 
@@ -226,7 +226,7 @@ function buildPlItemT(p) {
    to resolve the canonical slug casing.
    ══════════════════════════════════════════════════ */
 async function renderFilter(tag, container) {
-  document.title = '#' + tag + ' — ZureFX';
+  document.title = '#' + tag + ' | Zirov';
 
   var header = document.getElementById('tagsHeader');
   if (header) {
@@ -292,7 +292,7 @@ async function renderFilter(tag, container) {
 function renderIndex(index, container) {
   var entries = Object.entries(index);
 
-  document.title = 'Tags — ZureFX';
+  document.title = 'Tags | Zirov';
   updateTagsStats(entries.length + ' tag' + (entries.length !== 1 ? 's' : ''));
 
   var cloud = document.createElement('div');
