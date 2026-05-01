@@ -178,217 +178,145 @@
 
 <!-- ABOUT ME PAGE -->
 <div class="am-page">
+  
   <main class="am-main">
 
-    <!-- ① HERO -->
-    <div class="am-hero am-block">
-      <div class="am-avatar-wrap">
-        <img src="../img/profile.png" alt="Zirov" class="am-avatar" onerror="this.style.display='none'" />
-        <div class="am-avatar-ring"></div>
-        <span class="am-status-dot" title="Available"></span>
-      </div>
-      <div class="am-info">
-        <p class="am-handle">Security Researcher · CTF Player</p>
-        <h1 class="am-name">Ziro<em>v</em></h1>
-        <p class="am-tagline">Self-taught security researcher focused on offensive security, network infrastructure, and low-level systems. I build labs, break things intentionally, and write about what I learn.</p>
-        <div class="am-links">
-          <a href="https://github.com/z1rov" target="_blank" rel="noopener noreferrer" class="am-pill" aria-label="GitHub">
-            <svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
-          </a>
-          <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener noreferrer" class="am-pill" aria-label="LinkedIn">
-            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg>
-          </a>
-          <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener noreferrer" class="am-pill" aria-label="HackTheBox">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg>
-          </a>
-          <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener noreferrer" class="am-pill" aria-label="Discord">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-          </a>
-          <a href="mailto:fabian.huamani@ucsm.edu.pe" class="am-pill" aria-label="Email">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          </a>
-          <a href="https://youtube.com/@zirovsec" target="_blank" rel="noopener noreferrer" class="am-pill" aria-label="YouTube">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-          </a>
-          <a href="../cv/zirov-cv.pdf" download class="am-pill am-pill-cv">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-            CV
-          </a>
-        </div>
-      </div>
+  <!-- HERO -->
+  <div class="am-hero am-block">
+    <div class="am-avatar-wrap">
+      <img src="../img/profile.png" alt="Zirov" class="am-avatar" onerror="this.style.display='none'" />
+      <div class="am-avatar-ring"></div>
+      <span class="am-status-dot" title="Available"></span>
     </div>
+    <div class="am-info">
+      <p class="am-handle">Offensive Security Student · CTF Player</p>
+      <h1 class="am-name">Ziro<em>v</em></h1>
+      <p class="am-tagline">
+        Systems Engineering student focused on offensive security, Active Directory exploitation, internal infrastructure attacks, and practical penetration testing. I build labs, automate workflows, and document technical research through writeups and notes.
+      </p>
 
-    <!-- ② ABOUT -->
-    <div class="am-about am-block">
-      <div class="am-section-hd">
-        <span class="am-dot"></span>
-        <span class="am-label">About</span>
-      </div>
-      <p>I got into security through curiosity — reverse engineering games, poking at network traffic, and eventually finding CTF competitions where all that tinkering turned into something structured. Since then I've gone deep into offensive security: Active Directory abuse, web application exploitation, network pivoting, and infrastructure automation.</p>
-      <p>Outside of competitions I run personal labs to simulate real environments — cloud-hosted with Terraform, hardened with Tailscale, and deliberately broken for practice. I document everything here so it's useful for others who learn the same way I do: by breaking things first and reading the docs second.</p>
-    </div>
+      <div class="am-links">
+        <a href="https://github.com/z1rov" target="_blank" rel="noopener noreferrer" class="am-pill" aria-label="GitHub">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
+        </a>
 
-    <!-- ③ EXPERIENCE -->
-    <div class="am-exp am-block">
-      <div class="am-section-hd">
-        <span class="am-dot"></span>
-        <span class="am-label">Experience</span>
-      </div>
-      <div class="am-exp-list">
-        <div class="am-exp-item">
-          <div class="am-exp-left">
-            <span class="am-exp-period">2024<br>Present</span>
-            <span class="am-exp-current" title="Current position"></span>
-          </div>
-          <div class="am-exp-right">
-            <div class="am-exp-title">Security Researcher</div>
-            <div class="am-exp-org">Independent / Freelance</div>
-            <p class="am-exp-desc">Vulnerability research, CTF participation, and technical writing. Building and maintaining cloud-hosted offensive security labs. Contributing to security communities through writeups and tooling.</p>
-          </div>
-        </div>
-        <div class="am-exp-item">
-          <div class="am-exp-left">
-            <span class="am-exp-period">2023<br>2024</span>
-          </div>
-          <div class="am-exp-right">
-            <div class="am-exp-title">Junior Sysadmin / IT Support</div>
-            <div class="am-exp-org">Company Name · Remote</div>
-            <p class="am-exp-desc">Network administration, user support, and infrastructure maintenance. Introduced automated deployment workflows using Ansible. First exposure to enterprise Active Directory environments.</p>
-          </div>
-        </div>
-        <div class="am-exp-item">
-          <div class="am-exp-left">
-            <span class="am-exp-period">2022<br>2023</span>
-          </div>
-          <div class="am-exp-right">
-            <div class="am-exp-title">IT Intern</div>
-            <div class="am-exp-org">Company Name · On-site</div>
-            <p class="am-exp-desc">Hardware and software support, documentation, and internal network monitoring. Started self-studying offensive security during this period.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+        <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener noreferrer" class="am-pill" aria-label="LinkedIn">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg>
+        </a>
 
-    <!-- ④ CERTIFICATIONS -->
-    <div class="am-certs-wrap am-block">
-      <div class="am-section-hd">
-        <span class="am-dot"></span>
-        <span class="am-label">Certifications</span>
-      </div>
-      <div class="am-certs">
-        <a href="https://security.ine.com/certifications/ejpt-certification/" target="_blank" rel="noopener noreferrer" class="am-cert">
-          <div class="am-cert-icon">
-            <img src="https://assets.ine.com/certifications/badges/eJPT.png" alt="eJPT" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
-          </div>
-          <div class="am-cert-info">
-            <div class="am-cert-name">eJPT</div>
-            <div class="am-cert-meta">INE Security · 2024</div>
-          </div>
-          <span class="am-cert-arrow">↗</span>
-        </a>
-        <a href="https://www.comptia.org/certifications/security" target="_blank" rel="noopener noreferrer" class="am-cert">
-          <div class="am-cert-icon">
-            <img src="https://comptiacdn.azureedge.net/webcontent/images/default-source/siteicons/logosecurityplus.svg" alt="Security+" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div>
-          </div>
-          <div class="am-cert-info">
-            <div class="am-cert-name">Security+</div>
-            <div class="am-cert-meta">CompTIA · 2023</div>
-          </div>
-          <span class="am-cert-arrow">↗</span>
-        </a>
-        <a href="https://cloud.google.com/certification/cloud-engineer" target="_blank" rel="noopener noreferrer" class="am-cert am-cert-inprogress">
-          <div class="am-cert-icon">
-            <img src="https://cloud.google.com/images/social-icon-google-cloud-1200-630.png" alt="GCP" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg></div>
-          </div>
-          <div class="am-cert-info">
-            <div class="am-cert-name">Associate Cloud Engineer</div>
-            <div class="am-cert-meta">Google Cloud · <span class="am-cert-wip">In Progress</span></div>
-          </div>
-          <span class="am-cert-arrow">↗</span>
-        </a>
-        <a href="https://certifications.tcm-sec.com/peh/" target="_blank" rel="noopener noreferrer" class="am-cert">
-          <div class="am-cert-icon">
-            <img src="https://tcm-sec.com/wp-content/uploads/2021/06/TCM-Security-Logo-e1624913809806.png" alt="TCM" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg></div>
-          </div>
-          <div class="am-cert-info">
-            <div class="am-cert-name">Practical Ethical Hacking</div>
-            <div class="am-cert-meta">TCM Security · 2023</div>
-          </div>
-          <span class="am-cert-arrow">↗</span>
+        <a href="mailto:fabian.huamani@ucsm.edu.pe" class="am-pill" aria-label="Email">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
         </a>
       </div>
     </div>
+  </div>
 
-    <!-- ⑤ CTF & ACHIEVEMENTS -->
-    <div class="am-achv-wrap am-block">
-      <div class="am-section-hd">
-        <span class="am-dot"></span>
-        <span class="am-label">CTF &amp; Achievements</span>
-      </div>
-      <div class="am-achv">
-        <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener noreferrer" class="am-achv-item">
-          <img src="../img/profile.png" alt="HTB" class="am-achv-thumb" onerror="this.style.display='none'">
-          <div class="am-achv-body">
-            <div class="am-achv-title">HackTheBox — Pro Hacker</div>
-            <div class="am-achv-meta">Active since 2023 · 40+ machines rooted · Top 1%</div>
-          </div>
-          <span class="am-achv-arrow">↗</span>
-        </a>
-        <div class="am-achv-item">
-          <span class="am-achv-badge">Top 10</span>
-          <div class="am-achv-body">
-            <div class="am-achv-title">CTF Event Name 2024</div>
-            <div class="am-achv-meta">Category · Team or Solo · Platform</div>
-          </div>
-        </div>
-        <div class="am-achv-item">
-          <span class="am-achv-badge">Top 5%</span>
-          <div class="am-achv-body">
-            <div class="am-achv-title">TryHackMe — Global Ranking</div>
-            <div class="am-achv-meta">100+ rooms completed · Active learner</div>
-          </div>
-        </div>
-        <div class="am-achv-item">
-          <span class="am-achv-badge">Finalist</span>
-          <div class="am-achv-body">
-            <div class="am-achv-title">National / Regional CTF Competition</div>
-            <div class="am-achv-meta">Year · Organization</div>
-          </div>
-        </div>
-      </div>
+  <!-- ABOUT -->
+  <div class="am-about am-block">
+    <div class="am-section-hd">
+      <span class="am-dot"></span>
+      <span class="am-label">About</span>
     </div>
 
-    <!-- ⑥ EDUCATION -->
-    <div class="am-edu-wrap am-block">
-      <div class="am-section-hd">
-        <span class="am-dot"></span>
-        <span class="am-label">Education</span>
-      </div>
-      <div class="am-edu">
-        <div class="am-edu-item">
-          <div>
-            <div class="am-edu-degree">B.S. Computer Science / Systems Engineering</div>
-            <div class="am-edu-school">University Name</div>
-          </div>
-          <div class="am-edu-year">2020 — 2024</div>
-        </div>
-        <div class="am-edu-item">
-          <div>
-            <div class="am-edu-degree">Networking &amp; Cybersecurity Bootcamp</div>
-            <div class="am-edu-school">Platform / Institution Name</div>
-          </div>
-          <div class="am-edu-year">2022</div>
-        </div>
-      </div>
+    <p>
+      My journey into cybersecurity began with a strong interest in understanding how systems break, how trust can be abused, and how infrastructures fail under offensive pressure.
+    </p>
+
+    <p>
+      My primary focus is practical penetration testing, Active Directory compromise, Linux and Windows privilege escalation, internal network pivoting, and continuous laboratory simulation. This platform serves as a public technical notebook where I publish writeups, notes, and offensive tooling.
+    </p>
+  </div>
+
+  <!-- CERTIFICATIONS -->
+  <div class="am-certs-wrap am-block">
+    <div class="am-section-hd">
+      <span class="am-dot"></span>
+      <span class="am-label">Certifications</span>
     </div>
 
-  </main>
+    <div class="am-certs">
+
+      <a href="https://credentials.offsec.com/2ff49094-f104-4bf0-ad90-06a208361287#acc.VqEFGind" target="_blank" rel="noopener noreferrer" class="am-cert">
+        <div class="am-cert-icon">
+          <img src="../img/oscp.png" alt="OSCP" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/></svg></div>
+        </div>
+        <div class="am-cert-info">
+          <div class="am-cert-name">OSCP</div>
+          <div class="am-cert-meta">OffSec Certified Professional</div>
+        </div>
+        <span class="am-cert-arrow">↗</span>
+      </a>
+
+      <a href="https://credentials.offsec.com/d0abf7a2-c05b-4630-9aae-a662464c8c69#acc.tn7Jsarc" target="_blank" rel="noopener noreferrer" class="am-cert">
+        <div class="am-cert-icon">
+          <img src="../img/oscp+.png" alt="OSCP+" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/></svg></div>
+        </div>
+        <div class="am-cert-info">
+          <div class="am-cert-name">OSCP+</div>
+          <div class="am-cert-meta">OffSec Certified Professional Plus</div>
+        </div>
+        <span class="am-cert-arrow">↗</span>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- PROFILES -->
+  <div class="am-achv-wrap am-block">
+    <div class="am-section-hd">
+      <span class="am-dot"></span>
+      <span class="am-label">Profiles</span>
+    </div>
+
+    <div class="am-achv">
+
+      <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener noreferrer" class="am-achv-item">
+        <img src="../img/htb.png" alt="Hack The Box" class="am-achv-thumb">
+        <div class="am-achv-body">
+          <div class="am-achv-title">Hack The Box</div>
+          <div class="am-achv-meta">Labs · Machines · Active Directory · Offensive Practice</div>
+        </div>
+        <span class="am-achv-arrow">↗</span>
+      </a>
+
+      <a href="https://portal.offsec.com/public-profile/6f518bdf-181d-43af-b392-496c82c0de1c" target="_blank" rel="noopener noreferrer" class="am-achv-item">
+        <img src="../img/offsec.png" alt="OffSec" class="am-achv-thumb">
+        <div class="am-achv-body">
+          <div class="am-achv-title">OffSec Public Profile</div>
+          <div class="am-achv-meta">Certifications · Training Progress · Professional Verification</div>
+        </div>
+        <span class="am-achv-arrow">↗</span>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- EDUCATION -->
+  <div class="am-edu-wrap am-block">
+    <div class="am-section-hd">
+      <span class="am-dot"></span>
+      <span class="am-label">Education</span>
+    </div>
+
+    <div class="am-edu">
+      <a href="https://www.ucsm.edu.pe/" target="_blank" rel="noopener noreferrer" class="am-cert">
+        <div class="am-cert-icon">
+          <img src="../img/ucsm.png" alt="UCSM" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3L2 9l10 6 10-6-10-6zm0 6v12"/></svg></div>
+        </div>
+        <div class="am-cert-info">
+          <div class="am-cert-name">B.S. Systems Engineering</div>
+          <div class="am-cert-meta">Universidad Católica de Santa María</div>
+        </div>
+        <span class="am-cert-arrow">↗</span>
+      </a>
+    </div>
+  </div>
+
+</main>
 </div>
-
 <!-- FOOTER -->
 <footer class="site-footer">
   <div class="footer-main">
@@ -414,10 +342,10 @@
     <div class="footer-col">
       <div class="footer-col-label">Explore</div>
       <nav class="footer-links">
-        <a href="/#writeups"  class="footer-link"><span class="footer-link-arr">›</span>Writeups</a>
-        <a href="/#research"  class="footer-link"><span class="footer-link-arr">›</span>Research</a>
-        <a href="/#scripting" class="footer-link"><span class="footer-link-arr">›</span>Scripting</a>
-        <a href="/#notes"     class="footer-link"><span class="footer-link-arr">›</span>Notes</a>
+        <a href="#writeups"  class="footer-link"><span class="footer-link-arr">›</span>Writeups</a>
+        <a href="#research"  class="footer-link"><span class="footer-link-arr">›</span>Research</a>
+        <a href="#scripting" class="footer-link"><span class="footer-link-arr">›</span>Scripting</a>
+        <a href="#notes"     class="footer-link"><span class="footer-link-arr">›</span>Notes</a>
       </nav>
     </div>
     <div class="footer-col">
@@ -426,6 +354,14 @@
         <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="footer-soc">
           <svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
           GitHub
+        </a>
+        <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="footer-soc">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg>
+          LinkedIn
+        </a>
+        <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg>
+          HackTheBox
         </a>
         <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener" class="footer-soc">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
@@ -442,6 +378,7 @@
     </div>
   </div>
 </footer>
+
 
 <script src="../js/app.js"></script>
 <script src="../js/search.js"></script>
