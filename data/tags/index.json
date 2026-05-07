@@ -1,0 +1,11 @@
+{
+  "acl-abuse": 1,
+  "active-directory": 1,
+  "bloodhound": 1,
+  "delegation": 1,
+  "enumeration": 1,
+  "notes": 1,
+  "persistence": 1,
+  "powershell": 1,
+  "privilege-escalation": 1
+}

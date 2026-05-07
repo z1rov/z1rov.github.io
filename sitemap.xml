@@ -67,4 +67,16 @@
 
 
 
+
+  <url>
+    <loc>https://zirov.xyz/notes/powerview.html</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://zirov.xyz/img/powerview.png</image:loc>
+      <image:title>PowerView</image:title>
+    </image:image>
+  </url>
+
 </urlset>

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "powerview",
+    "title": "PowerView",
+    "section": "notes",
+    "description": "Complete PowerView cheatsheet for Active Directory enumeration and post-exploitation. Covers domain and forest reconnaissance, user and group enumeration, computer discovery, GPO and ACL analysis, trust mapping, delegation abuse (unconstrained, constrained and RBCD), privilege escalation paths via ACE hunting, AdminSDHolder and managed security groups, persistence techniques including DCSync rights, SPN manipulation, forced password resets and DACL backdoors, session hunting with Invoke-UserHunter, and BloodHound data collection. Every command includes context on when to use it, what privileges it requires and what you can do with the output. Built for penetration testers and red teamers operating in real Active Directory environments.",
+    "permalink": "/notes/powerview.html",
+    "btn_label": "Read More",
+    "date": "2025-01-01",
+    "tags": [
+      "active-directory",
+      "enumeration",
+      "notes",
+      "powershell",
+      "delegation",
+      "persistence",
+      "acl-abuse",
+      "privilege-escalation",
+      "bloodhound"
+    ],
+    "image": "/img/powerview.png",
+    "words": 1796,
+    "readTime": "9 min",
+    "pick": 1,
+    "subsection": "Active Directory"
+  }
+]
