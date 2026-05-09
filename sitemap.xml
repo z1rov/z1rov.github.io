@@ -79,4 +79,16 @@
     </image:image>
   </url>
 
+
+  <url>
+    <loc>https://zirov.github.io/writeups/overwatch-htb.html</loc>
+    <lastmod>2026-05-09</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://zirov.xyz/img/overwatch-htb.png</image:loc>
+      <image:title>Overwatch HTB</image:title>
+    </image:image>
+  </url>
+
 </urlset>
