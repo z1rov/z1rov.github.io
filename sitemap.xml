@@ -91,4 +91,16 @@
     </image:image>
   </url>
 
+
+  <url>
+    <loc>https://zirov.xyz/notes/adsearch-cheatsheet.html</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://zirov.xyz/img/adsearch-cheatsheet.png</image:loc>
+      <image:title>ADSearch</image:title>
+    </image:image>
+  </url>
+
 </urlset>

@@ -27,30 +27,5 @@
     "words": 1395,
     "readTime": "7 min",
     "pick": 1
-  },
-  {
-    "id": "overwatch-htb",
-    "title": "Overwatch HTB",
-    "section": "writeups",
-    "description": "Windows Active Directory machine exploited via SMB reverse engineering, ADIDNS poisoning to capture cleartext MSSQL credentials, and SOAP command injection for SYSTEM.",
-    "permalink": "/writeups/overwatch-htb.html",
-    "btn_label": "Read More",
-    "date": "2026-05-09",
-    "tags": [
-      "hackthebox",
-      "writeup",
-      "ctf",
-      "active-directory",
-      "adidns-poisoning",
-      "mssql-linked-server",
-      "soap-command-injection",
-      "dnspy",
-      "responder",
-      "windows"
-    ],
-    "image": "/img/overwatch-htb.png",
-    "words": 4424,
-    "readTime": "23 min",
-    "pick": 1
   }
 ]

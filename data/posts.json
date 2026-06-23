@@ -1,5 +1,34 @@
 [
   {
+    "id": "adsearch-cheatsheet",
+    "title": "ADSearch",
+    "section": "notes",
+    "description": "Complete quick-reference cheatsheet for ADSearch.exe covering connection modes, built-in enumeration shortcuts, custom LDAP queries for delegation/kerberoasting/AS-REP roasting/privileged accounts, output formatting flags, and execute-assembly one-liners for OSEP and real-world Active Directory engagements.",
+    "permalink": "/notes/adsearch-cheatsheet.html",
+    "btn_label": "Read More",
+    "date": "2026-06-23",
+    "tags": [
+      "adsearch",
+      "osep",
+      "crte",
+      "crtp",
+      "crto",
+      "active-directory",
+      "ldap",
+      "sliver",
+      "execute-assembly",
+      "cheatsheet",
+      "ctf",
+      "hackthebox",
+      "windows",
+      "writeup"
+    ],
+    "image": "/img/adsearch-cheatsheet.png",
+    "words": 1395,
+    "readTime": "7 min",
+    "pick": 1
+  },
+  {
     "id": "overwatch-htb",
     "title": "Overwatch HTB",
     "section": "writeups",

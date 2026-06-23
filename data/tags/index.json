@@ -1,12 +1,21 @@
 {
-  "active-directory": 1,
+  "active-directory": 2,
   "adidns-poisoning": 1,
-  "ctf": 1,
+  "adsearch": 1,
+  "cheatsheet": 1,
+  "crte": 1,
+  "crto": 1,
+  "crtp": 1,
+  "ctf": 2,
   "dnspy": 1,
-  "hackthebox": 1,
+  "execute-assembly": 1,
+  "hackthebox": 2,
+  "ldap": 1,
   "mssql-linked-server": 1,
+  "osep": 1,
   "responder": 1,
+  "sliver": 1,
   "soap-command-injection": 1,
-  "windows": 1,
-  "writeup": 1
+  "windows": 2,
+  "writeup": 2
 }

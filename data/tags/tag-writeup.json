@@ -1,5 +1,13 @@
 [
   {
+    "title": "ADSearch",
+    "date": "2026-06-23",
+    "section": "notes",
+    "permalink": "/notes/adsearch-cheatsheet.html",
+    "image": "/img/adsearch-cheatsheet.png",
+    "readTime": "7 min"
+  },
+  {
     "title": "Overwatch HTB",
     "date": "2026-05-09",
     "section": "writeups",
