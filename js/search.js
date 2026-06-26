@@ -345,7 +345,7 @@
       var color   = (typeof SECTION_COLOR_MAP !== 'undefined' && SECTION_COLOR_MAP[section])
                     || '#525252';
       var desc    = post.description || '';
-      var tags    = (post.tags || []).slice(0, 4);
+      var tags = post.tags || [];
 
       var tagsHTML = tags.map(function(tag) {
         var match = query && tag.toLowerCase().includes(query.toLowerCase());

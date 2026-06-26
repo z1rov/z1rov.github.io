@@ -64,22 +64,6 @@
        ════════════════════════════════════════════════════════ -->
 
 
-
-
-
-
-  <url>
-    <loc>https://zirov.xyz/notes/powerview.html</loc>
-    <lastmod>2026-05-07</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
-    <image:image>
-      <image:loc>https://zirov.xyz/img/powerview.png</image:loc>
-      <image:title>PowerView</image:title>
-    </image:image>
-  </url>
-
-
   <url>
     <loc>https://zirov.github.io/writeups/overwatch-htb.html</loc>
     <lastmod>2026-05-09</lastmod>
