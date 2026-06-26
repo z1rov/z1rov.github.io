@@ -87,4 +87,16 @@
     </image:image>
   </url>
 
+
+  <url>
+    <loc>https://z1rov.github.io/writeups/wingdata-htb.html</loc>
+    <lastmod>2026-06-26</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://zirov.xyz/img/wingdata-htb.png</image:loc>
+      <image:title>WingData HTB</image:title>
+    </image:image>
+  </url>
+
 </urlset>

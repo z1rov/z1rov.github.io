@@ -1,5 +1,13 @@
 [
   {
+    "title": "WingData HTB",
+    "date": "2026-06-26",
+    "section": "writeups",
+    "permalink": "/writeups/wingdata-htb.html",
+    "image": "/img/wingdata-htb.png",
+    "readTime": "15 min"
+  },
+  {
     "title": "ADSearch",
     "date": "2026-06-23",
     "section": "notes",

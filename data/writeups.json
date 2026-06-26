@@ -1,5 +1,36 @@
 [
   {
+    "id": "wingdata-htb",
+    "title": "WingData HTB",
+    "section": "writeups",
+    "description": "Linux machine exploited via Wing FTP Server unauthenticated RCE (CVE-2025-47812), credential cracking from an XML user store, and local privilege escalation through a Python tarfile path-traversal vulnerability (CVE-2025-4517) in a sudo-permitted backup restore script.",
+    "permalink": "/writeups/wingdata-htb.html",
+    "btn_label": "Read More",
+    "date": "2026-06-26",
+    "tags": [
+      "hackthebox",
+      "writeup",
+      "ctf",
+      "linux",
+      "wing-ftp-server",
+      "cve-2025-47812",
+      "lua-injection",
+      "null-byte-injection",
+      "tarfile-path-traversal",
+      "cve-2025-4517",
+      "hashcat",
+      "sudo-abuse",
+      "pwncat",
+      "ffuf",
+      "nmap",
+      "whatweb"
+    ],
+    "image": "/img/wingdata-htb.png",
+    "words": 2954,
+    "readTime": "15 min",
+    "pick": 1
+  },
+  {
     "id": "overwatch-htb",
     "title": "Overwatch HTB",
     "section": "writeups",
