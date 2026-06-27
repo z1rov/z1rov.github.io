@@ -23,7 +23,8 @@
       "pwncat",
       "ffuf",
       "nmap",
-      "whatweb"
+      "whatweb",
+      "oscp"
     ],
     "image": "/img/wingdata-htb.png",
     "words": 2954,

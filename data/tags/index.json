@@ -20,6 +20,7 @@
   "mssql-linked-server": 1,
   "nmap": 1,
   "null-byte-injection": 1,
+  "oscp": 1,
   "osep": 1,
   "pwncat": 1,
   "responder": 1,
