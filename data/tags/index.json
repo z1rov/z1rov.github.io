@@ -1,0 +1,13 @@
+{
+  "oscp": 1,
+  "cpts": 1,
+  "bscp": 1,
+  "apache nifi": 1,
+  "cve-2023-34468": 1,
+  "hackthebox": 1,
+  "linux privilege escalation": 1,
+  "jdbc injection": 1,
+  "lateral movement": 1,
+  "credential exposure": 1,
+  "ssh key leak": 1
+}

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "helix-htb",
+    "title": "Helix HTB",
+    "description": "Helix (HTB, Linux) is built around an industrial-automation theme with a three-stage chain. Foothold comes from CVE-2023-34468, an unauth H2 JDBC injection in Apache NiFi 1.21.0 sitting on a hidden vhost — gets you code exec as nifi. From there a leaked SSH key inside a NiFi support bundle hands you operator. A cracked PDF on that user's desktop reveals an OPC UA endpoint and the reactor's documented hazard threshold; writing straight to the writable telemetry nodes forces a fake hazard state, which tricks a sudo-gated \"break-glass\" console into dropping a root shell. Solid box for practicing RE-adjacent web app abuse plus a genuinely different privesc angle instead of the usual SUID/cron stuff.",
+    "date": "2026-08-08",
+    "author": "z1rov",
+    "section": "writeups",
+    "icon": "linux",
+    "tags": [
+      "oscp",
+      "cpts",
+      "bscp",
+      "apache nifi",
+      "cve-2023-34468",
+      "hackthebox",
+      "linux privilege escalation",
+      "jdbc injection",
+      "lateral movement",
+      "credential exposure",
+      "ssh key leak"
+    ],
+    "image": "https://img.zirov.net/helix-htb/helix-htb.png",
+    "permalink": "https://www.zirov.net/writeups/helix-htb.html",
+    "words": 3008,
+    "readTime": "16 min",
+    "pick": 1
+  }
+]

