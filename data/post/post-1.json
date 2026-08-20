@@ -1,5 +1,33 @@
 [
   {
+    "id": "xorxorxor-htb",
+    "title": "xorxorxor HTB",
+    "description": "xorxorxor (htb, crypto) is a lattice-cipher challenge that hides a linear algebra shortcut behind a lattice/cvp disguise. each flag character is packed into a vector with random padding, multiplied by a fixed public 3x3 matrix, and offset by a \"random\" error vector — except that vector is generated once and reused across all 46 characters. inverting the matrix and brute-forcing the tiny 11³ error keyspace, validated against every ciphertext line at once, collapses the whole problem instantly. a clean example of how reused randomness quietly breaks otherwise sound-looking crypto, without needing any real lattice reduction.",
+    "date": "2026-08-20",
+    "author": "z1rov",
+    "section": "writeups",
+    "icon": "challenge",
+    "tags": [
+      "eces",
+      "crypto",
+      "lattice",
+      "linear-algebra",
+      "matrix",
+      "sagemath",
+      "sympy",
+      "cryptography",
+      "reused-randomness",
+      "brute-force",
+      "cvp",
+      "hackthebox"
+    ],
+    "image": "https://img.zirov.net/xorxorxor-htb/xorxorxor-htb.png",
+    "permalink": "https://www.zirov.net/writeups/xorxorxor-htb.html",
+    "words": 1286,
+    "readTime": "7 min",
+    "pick": 1
+  },
+  {
     "id": "helix-htb",
     "title": "Helix HTB",
     "description": "Helix (HTB, Linux) is built around an industrial-automation theme with a three-stage chain. Foothold comes from CVE-2023-34468, an unauth H2 JDBC injection in Apache NiFi 1.21.0 sitting on a hidden vhost — gets you code exec as nifi. From there a leaked SSH key inside a NiFi support bundle hands you operator. A cracked PDF on that user's desktop reveals an OPC UA endpoint and the reactor's documented hazard threshold; writing straight to the writable telemetry nodes forces a fake hazard state, which tricks a sudo-gated \"break-glass\" console into dropping a root shell. Solid box for practicing RE-adjacent web app abuse plus a genuinely different privesc angle instead of the usual SUID/cron stuff.",

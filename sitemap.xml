@@ -62,4 +62,15 @@
     </image:image>
   </url>
 
+  <url>
+    <loc>https://www.zirov.net/writeups/xorxorxor-htb.html</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://img.zirov.net/xorxorxor-htb/xorxorxor-htb.png</image:loc>
+      <image:title>xorxorxor HTB</image:title>
+    </image:image>
+  </url>
+
 </urlset>

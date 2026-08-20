@@ -232,15 +232,19 @@
       var descLow    = (post.description || '').toLowerCase();
       var sectionLow = (post.section     || '').toLowerCase();
       var tagsLow    = (post.tags        || []).join(' ').toLowerCase();
+      var tagsNorm   = normDash(tagsLow);
 
       var score = 0;
       for (var i = 0; i < terms.length; i++) {
-        var t = terms[i];
+        var t     = terms[i];
+        var tNorm = normDash(t);
+
+        var tagHit = tagsLow.includes(t) || tagsNorm.includes(tNorm);
         var hit = titleLow.includes(t) || descLow.includes(t) ||
-                  sectionLow.includes(t) || tagsLow.includes(t);
+                  sectionLow.includes(t) || tagHit;
         if (!hit) return null;
         if (titleLow.includes(t))   score += 10;
-        if (tagsLow.includes(t))    score += 6;
+        if (tagHit)                 score += 6;
         if (sectionLow.includes(t)) score += 3;
         if (descLow.includes(t))    score += 1;
       }
@@ -284,8 +288,14 @@
       var desc    = post.description || '';
       var tags = post.tags || [];
 
+      var qTerms = (query || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       var tagsHTML = tags.map(function(tag) {
-        var match = query && tag.toLowerCase().includes(query.toLowerCase());
+        var tagLow  = tag.toLowerCase();
+        var tagNorm = normDash(tagLow);
+        var match = qTerms.some(function(t) {
+          var tNorm = normDash(t);
+          return tagLow.includes(t) || (tNorm && tagNorm.includes(tNorm));
+        });
         return '<span class="sr-tag' + (match ? ' sr-tag--match' : '') + '">' + esc(tag) + '</span>';
       }).join('');
 
@@ -383,6 +393,10 @@
 
   function escRe(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function normDash(str) {
+    return (str || '').replace(/-/g, '');
   }
 
 })();

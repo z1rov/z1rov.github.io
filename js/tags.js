@@ -11,6 +11,14 @@ function escT(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function slugifyTag(s) {
+  return String(s || '').trim().toLowerCase().replace(/[\s-]+/g, '-');
+}
+
+function tagKeyNorm(s) {
+  return String(s || '').trim().toLowerCase().replace(/[\s-]+/g, '');
+}
+
 function tagsLoadIndex() {
   if (_tags_loaded) return Promise.resolve(_tags_index);
 
@@ -34,7 +42,9 @@ function tagsLoadIndex() {
     });
 }
 
-function tagsLoadTag(slug) {
+function tagsLoadTag(rawSlug) {
+  var slug = slugifyTag(rawSlug);
+
   if (Object.prototype.hasOwnProperty.call(_tag_cache, slug)) {
     return Promise.resolve(_tag_cache[slug]);
   }
@@ -200,12 +210,12 @@ function attachTagsSearch() {
 }
 
 function filterTagsCloud(query) {
-  var q = (query || '').trim().toLowerCase();
+  var q = tagKeyNorm(query);
   var pills = document.querySelectorAll('.tags-cloud-pill');
   var visible = 0;
 
   pills.forEach(function(pill) {
-    var tag = (pill.dataset.tag || '').toLowerCase();
+    var tag = tagKeyNorm(pill.dataset.tag || '');
     var match = !q || tag.indexOf(q) !== -1;
     pill.style.display = match ? '' : 'none';
     if (match) visible++;
@@ -244,8 +254,8 @@ async function renderFilter(tag, container) {
 
   var index = await tagsLoadIndex();
   var tagKey = Object.keys(index).find(function(k) {
-    return k.toLowerCase() === tag.toLowerCase();
-  }) || tag.toLowerCase();
+    return tagKeyNorm(k) === tagKeyNorm(tag);
+  }) || tag;
 
   var posts = await tagsLoadTag(tagKey);
 
@@ -295,7 +305,7 @@ function renderIndex(index, container) {
     var btn = document.createElement('a');
     btn.className   = 'tags-cloud-pill';
     btn.dataset.tag = tg;
-    btn.href        = 'tags.html#' + encodeURIComponent(tg);
+    btn.href        = 'tags.html#' + encodeURIComponent(slugifyTag(tg));
     btn.innerHTML   = escT(tg) + '<span class="pill-count">' + count + '</span>';
     cloud.appendChild(btn);
   });
