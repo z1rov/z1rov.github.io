@@ -73,4 +73,15 @@
     </image:image>
   </url>
 
+  <url>
+    <loc>https://www.zirov.net/writeups/pirate-htb.html</loc>
+    <lastmod>2026-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <image:image>
+      <image:loc>https://img.zirov.net/pirate-htb/pirate-htb.png</image:loc>
+      <image:title>Pirate HTB</image:title>
+    </image:image>
+  </url>
+
 </urlset>

